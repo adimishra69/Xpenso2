@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "653324704810",
+    "project_id": "xpenso-1eb7b",
+    "storage_bucket": "xpenso-1eb7b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:653324704810:android:eca6ed7ed8581a4d66f753",
+        "android_client_info": {
+          "package_name": "com.example.xpenso"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxPoG_HLQGrGpFAYk4Z0WFMIH9g_Fp_qE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
