@@ -59,101 +59,6 @@ import com.example.xpenso.AppStart.AnalyticsHelper
 import com.example.xpenso.OnBoarding.XpensoToggle
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// XpensoToggle
-// ═══════════════════════════════════════════════════════════════════════════════
-
-private val TrackWidth = 52.dp
-private val TrackHeight = 28.dp
-private val ThumbSize = 22.dp
-private val ThumbPadding = 3.dp
-
-@Composable
-fun XpensoToggle(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-
-    val trackColor by animateColorAsState(
-        targetValue = if (checked)
-            MaterialTheme.colorScheme.primary
-        else
-            MaterialTheme.colorScheme.surfaceVariant,
-        animationSpec = tween(durationMillis = 200),
-        label = "trackColor"
-    )
-
-    val thumbOffset by animateDpAsState(
-        targetValue = if (checked)
-            TrackWidth - ThumbSize - ThumbPadding
-        else
-            ThumbPadding,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "thumbOffset"
-    )
-
-    val thumbSize by animateDpAsState(
-        targetValue = if (checked) ThumbSize else ThumbSize - 2.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
-        label = "thumbSize"
-    )
-
-    val borderColor by animateColorAsState(
-        targetValue = if (checked)
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-        else
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-        animationSpec = tween(durationMillis = 200),
-        label = "borderColor"
-    )
-
-    Box(
-        modifier = modifier
-            .width(TrackWidth)
-            .height(TrackHeight)
-            .clip(RoundedCornerShape(50))
-            .background(trackColor)
-            .border(
-                width = 1.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(50)
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null
-            ) { onCheckedChange(!checked) },
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Box(
-            modifier = Modifier
-                .offset(x = thumbOffset)
-                .size(thumbSize)
-                .shadow(
-                    elevation = if (checked) 4.dp else 2.dp,
-                    shape = CircleShape,
-                    ambientColor = if (checked)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-                    else
-                        Color.Black.copy(alpha = 0.15f),
-                    spotColor = if (checked)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-                    else
-                        Color.Black.copy(alpha = 0.15f)
-                )
-                .clip(CircleShape)
-                .background(Color.White)
-        )
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // AnalyticsHeader
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -343,7 +248,7 @@ fun AnalyticsFooter(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 52.dp)
+                .padding(bottom = 82.dp)
         ) {
             TextButton(
                 onClick = onBack,
@@ -433,6 +338,12 @@ fun AnalyticsScreen(
             .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(Modifier.height(24.dp))
+
+        OnboardingStepHeader(step = 1)
+
+        Spacer(Modifier.height(12.dp))
+
         Box(
             modifier = Modifier
                 .weight(1f)

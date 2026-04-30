@@ -1,4 +1,4 @@
-package com.example.myproject.InsightYearView
+package com.example.xpenso.InsightYearView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth

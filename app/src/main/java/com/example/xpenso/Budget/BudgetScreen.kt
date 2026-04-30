@@ -13,6 +13,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BarChart
 import com.example.xpenso.AppStart.AnalyticsHelper
 import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
 import com.example.xpenso.SettingsStore
@@ -27,7 +29,8 @@ import java.util.Locale
 fun BudgetScreen(
     currencySymbol: String,
     settingsStore: SettingsStore,
-    expenseViewModel: ExpenseViewModel
+    expenseViewModel: ExpenseViewModel,
+//    onYearlyClick: () -> Unit
 ) {
 
     val scope = rememberCoroutineScope()
@@ -123,12 +126,25 @@ fun BudgetScreen(
         label = "ProgressColorAnim"
     )
 
-
+    var showYearlyScreen by remember { mutableStateOf(false) }
     // ================= SCREEN =================
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            AppTopBar("Budgets")
+            AppTopBar("Budgets",
+//                actions = {
+//                    IconButton(
+//                        onClick = onYearlyClick
+//                    ) {
+//                        Icon(
+//                            Icons.Outlined.BarChart,
+//                            contentDescription = "Yearly Analysis"
+//                        )
+//                    }
+//                }
+            )
+
+
         }
     ) { padding ->
 
@@ -204,6 +220,7 @@ fun BudgetScreen(
         BudgetDialog(
             initialValue = if (budget > 0) budget.toString() else "",
             isEditMode = budget > 0,
+            currencySymbol = currencySymbol,
             onDismiss = { showDialog = false },
             onSave = { newBudget ->
                 scope.launch {

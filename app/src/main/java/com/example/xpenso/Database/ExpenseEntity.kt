@@ -13,6 +13,10 @@ data class ExpenseEntity(
 
     val amount: Double,
 
+    val category: String, // Add this: To store "FOOD", "BILL", etc.
+
+    val notes: String = "",
+
     val currencySymbol: String,
 
     val timestamp: Long,

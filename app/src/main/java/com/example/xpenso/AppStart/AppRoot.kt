@@ -82,19 +82,38 @@ fun AppRoot(
         val insetsController = WindowCompat.getInsetsController(window, view)
 
         when (screenMode) {
+
+            // 0 → Standard
+            0 -> {
+                WindowCompat.setDecorFitsSystemWindows(window, true)
+
+                insetsController.show(
+                    WindowInsetsCompat.Type.statusBars() or
+                            WindowInsetsCompat.Type.navigationBars()
+                )
+            }
+
+            // 1 → Fullscreen (edge-to-edge but bars visible)
             1 -> {
                 WindowCompat.setDecorFitsSystemWindows(window, false)
-                insetsController.show(WindowInsetsCompat.Type.systemBars())
+
+                insetsController.show(
+                    WindowInsetsCompat.Type.statusBars() or
+                            WindowInsetsCompat.Type.navigationBars()
+                )
             }
+
+            // 2 → Immersive (hide bars)
             2 -> {
                 WindowCompat.setDecorFitsSystemWindows(window, false)
-                insetsController.hide(WindowInsetsCompat.Type.systemBars())
+
+                insetsController.hide(
+                    WindowInsetsCompat.Type.statusBars() or
+                            WindowInsetsCompat.Type.navigationBars()
+                )
+
                 insetsController.systemBarsBehavior =
                     WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-            else -> {
-                WindowCompat.setDecorFitsSystemWindows(window, true)
-                insetsController.show(WindowInsetsCompat.Type.systemBars())
             }
         }
     }
@@ -128,18 +147,6 @@ fun AppRoot(
         )
         return
     }
-
-//    LaunchedEffect(shouldLock) {
-//        if (!shouldLock) {
-//            skipNextLock = false
-//        }
-//    }
-
-//    🏠 MAIN APP
-//    val handlePinCreated: () -> Unit = {
-//        skipNextLock = true
-//        isUnlocked = true
-//    }
 
     MainScreen(
         currencySymbol = selectedCurrencySymbol,

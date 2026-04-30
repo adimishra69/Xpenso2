@@ -1,11 +1,11 @@
 package com.example.xpenso.PremiumHandler
 
-
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -21,11 +21,11 @@ fun PremiumUpgradeCard(
 ) {
 
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 16.dp)
-            .animateContentSize()
-            .clickable(enabled = !isPremium) { onClick() },
+            .animateContentSize(),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -52,30 +52,47 @@ fun PremiumUpgradeCard(
             Column(modifier = Modifier.weight(1f)) {
 
                 Text(
-                    text = if (isPremium) "Xpenso Premium Active" else "Xpenso Premium",
+                    text = if (isPremium)
+                        "Xpenso Premium Active"
+                    else
+                        "Xpenso Premium",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
                     text = if (isPremium)
-                        "All premium features unlocked"
+                        "Xpenso Premium active with all features"
                     else
-                        "Unlock cloud backup & advanced insights",
+                        "Upgrade to Xpenso Premium for all features",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            if (isPremium) {
-                Text(
-                    text = "Active",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
-            } else {
-                TextButton(onClick = onClick) {
-                    Text("Upgrade")
+            Box(
+                modifier = Modifier.width(90.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Text(
+                        text = if (isPremium) "View" else "Upgrade",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(Modifier.width(4.dp))
+
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }

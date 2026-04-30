@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PremiumScreen(
+fun PremiumActivationScreen(
     settingsStore: SettingsStore,
     onBack: () -> Unit
 ) {
@@ -207,7 +207,7 @@ fun PremiumScreen(
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    "Login to save your premium features across all your devices seamlessly.",
+                    "Login to save your premium features across all your devices seamlessly",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

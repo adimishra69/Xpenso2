@@ -6,6 +6,7 @@ import android.net.Uri
 import com.example.xpenso.Database.BackupExpense
 import com.example.xpenso.Database.ExpenseDao
 import com.example.xpenso.Database.ExpenseEntity
+import com.example.xpenso.Transaction.ExpenseCategory
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -33,12 +34,15 @@ class ExpenseRepository(
     suspend fun updateExpense(expense: ExpenseEntity) {
         expenseDao.updateExpense(expense)
     }
+
     suspend fun deleteExpense(expense: ExpenseEntity) {
         expenseDao.deleteExpense(expense)
     }
+
     suspend fun getExpenseCount(): Int {
         return expenseDao.getExpenseCount()
     }
+
     suspend fun deleteAllExpenses() {
         expenseDao.deleteAllExpenses()
     }
@@ -47,6 +51,7 @@ class ExpenseRepository(
      * Exports all expense data to a human-readable JSON file via a given URI.
      * @return A Result wrapper indicating success or an Exception on failure.
      */
+
     suspend fun exportData(context: Context, uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val expenses = expenseDao.getAllExpensesList()
@@ -55,15 +60,25 @@ class ExpenseRepository(
             }
 
             // Convert to backup-friendly format with readable dates
-            val backupExpenses = expenses.map { it.toBackupExpense() }
+            val backupExpenses = expenses
+                .sortedByDescending { it.timestamp }
+                .map { it.toBackupExpense() }
 
             // Use Gson with Pretty Printing
             val gson = GsonBuilder().setPrettyPrinting().create()
-            val backupWrapper = mapOf(
+            val dateFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+
+            val backupWrapper = linkedMapOf(
                 "app" to "Xpenso",
-                "version" to 1,
+                "version" to "1.0.0",
                 "backup_type" to "expenses",
+
+                // ✅ machine (keep this)
                 "exported_at" to System.currentTimeMillis(),
+
+                // ✅ human readable (add this)
+                "exported_at_readable" to dateFormat.format(Date()),
+
                 "data" to backupExpenses
             )
 
@@ -123,22 +138,34 @@ private fun ExpenseEntity.toBackupExpense(): BackupExpense {
     val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
     return BackupExpense(
         id = this.id.toLong(),
+        title = this.title,
         amount = this.amount,
-        category = this.title,
-        description = this.paymentMode,
+        category = this.category,
+        notes = this.notes,
+        paymentMode = this.paymentMode,
         date = dateFormat.format(Date(this.timestamp))
     )
 }
 
 private fun BackupExpense.toExpenseEntity(): ExpenseEntity {
     val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-    val timestamp = dateFormat.parse(this.date)?.time ?: System.currentTimeMillis()
+    val timestamp =
+        dateFormat.parse(this.date)?.time ?: System.currentTimeMillis()
+
+    val resolvedCategory =
+        ExpenseCategory.entries
+            .find { it.name == this.category }
+            ?.name
+            ?: ExpenseCategory.OTHER.name
+
     return ExpenseEntity(
-        id = 0, // Set to 0 to allow Room to auto-generate a new ID
-        title = this.category,
+        id = 0,
+        title = this.title ?: "",
         amount = this.amount,
-        currencySymbol = "", // Currency symbol is not part of the backup, handle as needed
+        category = resolvedCategory,
+        notes = this.notes ?: "",
+        currencySymbol = "",
         timestamp = timestamp,
-        paymentMode = this.description ?: ""
+        paymentMode = this.paymentMode ?: ""
     )
 }

@@ -2,6 +2,7 @@ package com.example.xpenso.Settings
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,12 +28,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.xpenso.AppStart.AnalyticsHelper
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TermsScreen(onBack: () -> Unit) {
+
     LaunchedEffect(Unit) {
         AnalyticsHelper.trackScreen("Terms")
     }
+
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val context = LocalContext.current
 
@@ -47,7 +51,7 @@ fun TermsScreen(onBack: () -> Unit) {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            "Last updated: January 13, 2026",
+                            "Last updated: April 27, 2026",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -58,15 +62,11 @@ fun TermsScreen(onBack: () -> Unit) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
                 scrollBehavior = scrollBehavior
             )
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -74,100 +74,105 @@ fun TermsScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
         ) {
+
             Spacer(Modifier.height(16.dp))
 
             Text(
-                text = "Welcome to Xpenso. Please read our Terms of Service and Privacy Policy carefully. By using our application, you agree to be bound by these terms.",
+                text = "Xpenso is built with a privacy-first approach. By using this app, you agree to the following terms designed to keep your data safe and your experience reliable.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(Modifier.height(32.dp))
 
-            // --- TERMS SECTION ---
-            TermsHeader(title = "Terms of Service", icon = Icons.Default.Gavel)
+            // TERMS
+            TermsHeader("Terms of Service", Icons.Default.Gavel)
 
             TermsItem(
                 title = "1. Acceptance of Terms",
-                content = "By accessing and using Xpenso, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions."
+                content = "By using Xpenso, you agree to these terms. If you do not agree, please discontinue use of the app."
             )
 
             TermsItem(
-                title = "2. User Conduct",
-                content = "Users are responsible for maintaining the confidentiality of their data and for all activities that occur under their use of the app."
+                title = "2. User Responsibility",
+                content = "You are responsible for how you use the app and for maintaining the security of your device and data."
             )
 
             TermsItem(
                 title = "3. Intellectual Property",
-                content = "The app, including its original content, features, and functionality, is owned by Xpenso and is protected by international copyright and trademark laws."
+                content = "All design, features, and functionality of Xpenso are owned by the developer and protected under applicable laws."
             )
 
             Spacer(Modifier.height(16.dp))
 
-            // --- PRIVACY SECTION ---
-            TermsHeader(title = "Privacy Policy", icon = Icons.Default.PrivacyTip)
+            // PRIVACY
+            TermsHeader("Privacy Policy", Icons.Default.PrivacyTip)
 
             TermsItem(
                 title = "Data Collection",
-                content = "Xpenso is designed with privacy in mind. We do not collect your personal financial data. All expense records are stored locally on your device."
+                content = "Xpenso does not collect or store your personal financial data. All records remain on your device. The app may use anonymous analytics (such as Firebase Analytics) to improve user experience."
             )
 
             TermsItem(
                 title = "Local Storage",
-                content = "Your data remains on your device. We do not have access to your transactions, budgets, or any other information you enter into the app."
+                content = "Your personal financial data is never transmitted to external servers. Anonymous analytics data may be collected to improve the app."
+            )
+
+            TermsItem(
+                title = "Analytics",
+                content = "Xpenso uses Firebase Analytics (by Google) to collect anonymous usage data such as app interactions and device information. This data does not include personal financial information and does not personally identify users. You can disable analytics anytime from app settings."
             )
 
             TermsItem(
                 title = "Security",
-                content = "We prioritize your security. Since data is local, we recommend using device-level security (PIN/Biometric) to protect your information.",
+                content = "We recommend using device-level security such as PIN or biometric lock to protect your data.",
                 icon = Icons.Default.Security
             )
 
             Spacer(Modifier.height(32.dp))
 
-            // --- CONTACT CARD ---
+            // CONTACT
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.89f)
                 ),
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.ContactSupport,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Icon(Icons.Default.ContactSupport, contentDescription = null)
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            text = "Questions?",
+                            text = "Have questions?",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                     }
+
                     Spacer(Modifier.height(12.dp))
+
                     Text(
-                        text = "If you have any questions about these Terms or our Privacy Policy, feel free to reach out to us.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Reach out anytime. Xpenso is actively improved based on your feedback.",
+                        style = MaterialTheme.typography.bodyMedium
                     )
+
                     Spacer(Modifier.height(20.dp))
+
                     Button(
                         onClick = {
                             val email = "xpenso.app.contact@gmail.com"
-                            val subject = "Feedback / Issue Report for Xpenso App"
+                            val subject = "Xpenso App Feedback"
+
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
                                 data = Uri.parse("mailto:$email")
                                 putExtra(Intent.EXTRA_SUBJECT, subject)
                             }
-                            val chooser = Intent.createChooser(intent, "Send Email")
-                            context.startActivity(chooser)
+
+                            context.startActivity(Intent.createChooser(intent, "Send Email"))
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(16.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.Email, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
@@ -175,11 +180,24 @@ fun TermsScreen(onBack: () -> Unit) {
                     }
                 }
             }
+            Spacer(Modifier.height(12.dp))
 
+            TextButton(
+                onClick = {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://xpenso-official.github.io/xpenso-policy/")
+                    )
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("View full policy online")
+            }
             Spacer(Modifier.height(48.dp))
 
             Text(
-                text = "© 2026 Xpenso Team. All rights reserved.",
+                text = "© 2026 Xpenso. All rights reserved",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelSmall,

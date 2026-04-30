@@ -22,7 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
  fun InsightMetricCard(
@@ -31,7 +33,7 @@ import androidx.compose.ui.unit.dp
     value: String,
     modifier: Modifier = Modifier,
     valueColor: Color = MaterialTheme.colorScheme.onSurface,
-            centerValue: Boolean = false   // ⭐ ADD THIS
+//            centerValue: Boolean = false   // ⭐ ADD THIS
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -50,23 +52,28 @@ import androidx.compose.ui.unit.dp
                 Spacer(Modifier.width(8.dp))
                 Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            val titleLarge = MaterialTheme.typography.titleLarge
+
+            val dynamicFontSize =
+                if (label == "Top Category" && value.length > 10)
+                    (titleLarge.fontSize.value - 3).sp
+                else
+                    titleLarge.fontSize
+
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleLarge,
+                style = titleLarge.copy(fontSize = dynamicFontSize),
                 fontWeight = FontWeight.SemiBold,
                 color = valueColor,
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = if (centerValue)
-                    androidx.compose.ui.text.style.TextAlign.Center
-                else
-                    androidx.compose.ui.text.style.TextAlign.Start
+                textAlign = TextAlign.Start
             )
         }
     }
 }
 
 @Composable
-fun InsightMetricCards(
+fun LongInsightMetricCard(
     icon: ImageVector,
     label: String,
     value: AnnotatedString,

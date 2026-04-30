@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -28,7 +29,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -80,7 +84,7 @@ fun LockScreen(
     useBiometrics: Boolean,
     onUnlock: () -> Unit
 ) {
-    var inputPin by remember { mutableStateOf("") }
+    var inputPin by rememberSaveable { mutableStateOf("") }
     var isError  by remember { mutableStateOf(false) }
     val context  = LocalContext.current
 
@@ -121,6 +125,8 @@ fun LockScreen(
             launchBiometricPrompt()
         }
     }
+
+    val haptic = LocalHapticFeedback.current
 
     // ─────────────────────────────────────────────────────────────────────────
     // Root surface with mesh-gradient background
@@ -281,7 +287,8 @@ fun LockScreen(
                                     savedPin = savedPin,
                                     onUpdatePin = { inputPin = it },
                                     onErrorChange = { isError = it },
-                                    onUnlock = onUnlock
+                                    onUnlock = onUnlock,
+                                    haptic = haptic
                                 )
                             },
                             label = {
@@ -487,24 +494,29 @@ private fun BiometricButton(onClick: () -> Unit) {
 // ─────────────────────────────────────────────────────────────────────────────
 // handlePinInput — UNCHANGED (exact same logic and signature)
 // ─────────────────────────────────────────────────────────────────────────────
+
 fun handlePinInput(
     newPin: String,
     savedPin: String,
     onUpdatePin: (String) -> Unit,
     onErrorChange: (Boolean) -> Unit,
-    onUnlock: () -> Unit
+    onUnlock: () -> Unit,
+    haptic: HapticFeedback
 ) {
+
     if (newPin.length > 6) return
 
     onUpdatePin(newPin)
 
     when {
         newPin == savedPin -> {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onErrorChange(false)
             onUnlock()
         }
 
         newPin.length == 6 -> {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onErrorChange(true)
         }
 

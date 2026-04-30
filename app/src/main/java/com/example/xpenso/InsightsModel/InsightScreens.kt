@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -110,7 +109,7 @@ fun InsightsScreen(
                                     .fillMaxSize()
                                     .graphicsLayer(alpha = pillAlpha)
                                     .clip(RoundedCornerShape(18.dp))
-                                    .background(colorScheme.primary)
+                                    .background(colorScheme.primary.copy(.9f))
                             )
                         }
 
@@ -168,11 +167,11 @@ fun InsightsScreen(
                     settingsStore = settingsStore,
                     startOfMonth = currentStartDay,
                     onCategoryClick = onCategoryClick,
-                    onPremiumRequired = {
-                        showPremiumSheet = true
-                        premiumMessage =
-                            "View transactions for a specific category with Xpenso Premium"
-                    }
+//                    onPremiumRequired = {
+//                        showPremiumSheet = true
+//                        premiumMessage =
+//                            "View transactions for a specific category with Xpenso Premium"
+//                    }
                 )
             }
 

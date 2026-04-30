@@ -14,15 +14,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.xpenso.Database.ExpenseEntity
 import com.example.xpenso.Transaction.ExpenseCategory
-import com.example.xpenso.utils.CurrencyFormatter
 import com.example.xpenso.utils.CurrencyText
 
 @Composable
@@ -35,7 +31,18 @@ fun DailyTopSpendingCard(
         if (filteredExpenses.isEmpty()) return@remember null
 
         // Group expenses by category (using your detect logic) and sum them up
-        filteredExpenses.groupBy { ExpenseCategory.Companion.detect(it.title) }
+        filteredExpenses.groupBy { expense ->
+
+            val detected = ExpenseCategory.detect(expense.title)
+
+            if (expense.category.equals(detected.name, ignoreCase = true)) {
+                detected
+            } else {
+                ExpenseCategory.entries.find {
+                    it.name.equals(expense.category, ignoreCase = true)
+                } ?: ExpenseCategory.OTHER
+            }
+        }
             .mapValues { entry -> entry.value.sumOf { it.amount } }
             .maxByOrNull { it.value } // Find the one with the highest sum
     }

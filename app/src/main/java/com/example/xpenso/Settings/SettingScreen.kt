@@ -1,8 +1,12 @@
-package com.example.myproject.Settings
+package com.example.xpenso.Settings
 
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.R.attr.fontWeight
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -19,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.filled.*
@@ -33,20 +38,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.xpenso.AppStart.AnalyticsHelper
+import com.example.xpenso.NotificationsWork.ReminderScheduler
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.xpenso.ExpenseViewmodel.BackupRestoreState
 import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
 import com.example.xpenso.PremiumHandler.PremiumFeatureSheet
 import com.example.xpenso.PremiumHandler.PremiumUpgradeCard
-import com.example.xpenso.Settings.ColorStyleSetting
-import com.example.xpenso.Settings.DataManagementDialogs
-import com.example.xpenso.Settings.SettingsItem
-import com.example.xpenso.Settings.SettingsSection
-import com.example.xpenso.Settings.SettingsSwitchItem
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.utils.AppTopBar
 import kotlinx.coroutines.launch
+import java.util.jar.Manifest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,30 +65,28 @@ fun SettingsScreen(
     onNavigateToPremium: () -> Unit,
     onNavigateToReports: () -> Unit   // NEW
 ) {
+
+    val viewModel: SettingsViewModel = viewModel()
     val isPremium by settingsStore.isPremium.collectAsState(initial = false)
     val scope = rememberCoroutineScope()
-    val scrollState = rememberSaveable(saver = ScrollState.Saver) {
-        ScrollState(0)
-    }
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     var visible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { visible = true}
     val animatedOffset by animateFloatAsState(
-        targetValue = if (visible) 0f else 40f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+        targetValue = if (visible) 0f else 18f,
+        animationSpec = tween(
+            durationMillis = 140,
+            easing = FastOutSlowInEasing
         ),
         label = "settingsOffset"
     )
 
     val animatedAlpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow
+        animationSpec = tween(
+            durationMillis = 120
         ),
         label = "settingsAlpha"
     )
@@ -113,18 +117,31 @@ fun SettingsScreen(
 //        }
 //    }
 
+//    val isNotificationEnabled =
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            ContextCompat.checkSelfPermission(
+//                context,
+//                Manifest.permission.POST_NOTIFICATIONS
+//            ) == PackageManager.PERMISSION_GRANTED
+//        } else {
+//            NotificationManagerCompat.from(context).areNotificationsEnabled()
+//        }
+
+
+//    val reminderEnabled by settingsStore.reminderEnabled.collectAsState(initial = false)
+
     LaunchedEffect(Unit) {
         AnalyticsHelper.trackScreen("Settings")
     }
-    LaunchedEffect(backupRestoreState) {
+    LaunchedEffect(Unit) {
         when (val state = backupRestoreState) {
             is BackupRestoreState.Success -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
                 expenseViewModel.resetBackupRestoreState()
             }
 
             is BackupRestoreState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
                 expenseViewModel.resetBackupRestoreState()
             }
 
@@ -151,29 +168,32 @@ fun SettingsScreen(
                     .consumeWindowInsets(paddingValues),
                 contentAlignment = Alignment.TopCenter
             ) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(tween(220)) +
-                            scaleIn(
-                                animationSpec = tween(
-                                    durationMillis = 220,
-                                    easing = FastOutSlowInEasing
-                                ),
-                                initialScale = 0.94f
-                            )
+//                AnimatedVisibility(
+//                    visible = true,
+//                    enter = fadeIn(tween(0)) +
+//                            scaleIn(
+//                                animationSpec = tween(
+//                                    durationMillis = 220,
+//                                    easing = FastOutSlowInEasing
+//                                ),
+//                                initialScale = 0.94f
+//                            )
+//                ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .widthIn(max = 520.dp)
+                        .fillMaxWidth()
+//                            .graphicsLayer {
+//                            translationY = animatedOffset
+//                            alpha = animatedAlpha
+//                        },
+                    , state = viewModel.listState,
+                    contentPadding = PaddingValues(
+                        horizontal = 20.dp,
+                        vertical = 8.dp
+                    )
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .widthIn(max = 520.dp)
-                            .fillMaxWidth()
-                            .verticalScroll(scrollState)
-                            .graphicsLayer {
-                                translationY = animatedOffset
-                                alpha = animatedAlpha
-                            }
-                            .padding(horizontal = 20.dp, vertical = 8.dp)
-                    ) {
-
+                    item {
 
                         PremiumUpgradeCard(
                             isPremium = isPremium,
@@ -221,8 +241,12 @@ fun SettingsScreen(
                                                 count = 3
                                             ),
                                             colors = SegmentedButtonDefaults.colors(
-                                                activeContainerColor = MaterialTheme.colorScheme.primary,
-                                                activeContentColor = MaterialTheme.colorScheme.onPrimary
+                                                activeContainerColor = MaterialTheme.colorScheme.primary.copy(
+                                                    0.8f
+                                                ),
+                                                activeContentColor = MaterialTheme.colorScheme.onPrimary.copy(
+                                                    .9f
+                                                )
                                             )
                                         ) {
                                             Text(
@@ -262,8 +286,12 @@ fun SettingsScreen(
                                                 count = 3
                                             ),
                                             colors = SegmentedButtonDefaults.colors(
-                                                activeContainerColor = MaterialTheme.colorScheme.primary,
-                                                activeContentColor = MaterialTheme.colorScheme.onPrimary
+                                                activeContainerColor = MaterialTheme.colorScheme.primary.copy(
+                                                    0.8f
+                                                ),
+                                                activeContentColor = MaterialTheme.colorScheme.onPrimary.copy(
+                                                    0.9f
+                                                )
                                             )
                                         ) {
                                             Text(
@@ -275,11 +303,11 @@ fun SettingsScreen(
                                         }
                                     }
                                 }
-                                ColorStyleSetting(
-                                    colorStyle = colorStyle,
-                                    settingsStore = settingsStore,
-                                    scope = scope
-                                )
+//                                ColorStyleSetting(
+//                                    colorStyle = colorStyle,
+//                                    settingsStore = settingsStore,
+//                                    scope = scope
+//                                )
                             }
                             // ... existing Screen Mode SingleChoiceSegmentedButtonRow ends here ...
 
@@ -311,7 +339,94 @@ fun SettingsScreen(
                                 onClick = { showStartOfMonthDialog = true }
                             )
                         }
+//
+//                        // --- SECTION: NOTIFICATIONS ---
+                        SettingsSection(title = "Notifications") {
 
+                            val intent = Intent().apply {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    action =
+                                        android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                                    putExtra(
+                                        android.provider.Settings.EXTRA_APP_PACKAGE,
+                                        context.packageName
+                                    )
+                                } else {
+                                    action = "android.settings.APP_NOTIFICATION_SETTINGS"
+                                    putExtra("app_package", context.packageName)
+                                    putExtra("app_uid", context.applicationInfo.uid)
+                                }
+                            }
+
+                            // Check System Notification Permission
+                            val isNotificationEnabled =
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    checkSelfPermission(
+                                        context,
+                                        POST_NOTIFICATIONS
+                                    ) == PERMISSION_GRANTED
+                                } else {
+                                    NotificationManagerCompat.from(context)
+                                        .areNotificationsEnabled()
+                                }
+
+                            LaunchedEffect(isNotificationEnabled) {
+                                if (isNotificationEnabled) {
+                                    ReminderScheduler.schedule(context)
+                                } else {
+                                    ReminderScheduler.cancel(context)
+                                }
+                            }
+
+//                            if (!isNotificationEnabled) {
+//                                // CASE A: Notifications OFF
+//                                SettingsItem(
+//                                    icon = Icons.Default.NotificationsOff,
+//                                    title = "Enable Daily Reminder",
+//                                    subtitle = "Notifications disabled",
+//                                    onClick = {
+//                                        context.startActivity(intent)
+//                                    }
+//                                )
+//                            } else {
+//
+//                                // CASE B: Notifications ON
+//                                SettingsItem(
+//                                    icon = Icons.Default.Notifications,
+//                                    title = "Daily Reminder Enabled",
+//                                    subtitle = "Tap to manage notification settings",
+//                                    onClick = {
+//                                        context.startActivity(intent)
+//                                    }
+//                                )
+//                            }
+                            val title =
+                                if (isNotificationEnabled)
+                                    "Daily Reminder Enabled"
+                                else
+                                    "Enable Daily Reminder"
+
+                            val subtitle =
+                                if (isNotificationEnabled)
+                                    "Tap to manage notification settings"
+                                else
+                                    "Notifications disabled"
+
+                            val icon =
+                                if (isNotificationEnabled)
+                                    Icons.Default.Notifications
+                                else
+                                    Icons.Default.NotificationsOff
+
+                            SettingsItem(
+                                icon = icon,
+                                title = title,
+                                subtitle = subtitle,
+                                onClick = {
+                                    context.startActivity(intent)
+                                }
+                            )
+                        }
                         // --- SECTION: DATA MANAGEMENT ---
                         SettingsSection(title = "Data Management") {
                             SettingsItem(
@@ -422,6 +537,7 @@ fun SettingsScreen(
                             )
                         }
 
+
                     }
                 }
                 // --- DIALOGS ---
@@ -468,13 +584,32 @@ fun SettingsScreen(
 
                                     (1..28).forEach { day ->
 
+                                        val isSelected = day == startOfMonth
+
                                         ListItem(
                                             headlineContent = {
-                                                Text("Day $day")
+                                                Text(
+                                                    text = "Day $day",
+                                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                                )
+                                            },
+
+                                            leadingContent = {
+                                                if (isSelected) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = "Selected",
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
                                             },
 
                                             colors = ListItemDefaults.colors(
-                                                containerColor = Color.Transparent
+                                                containerColor =
+                                                    if (isSelected)
+                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                                    else
+                                                        Color.Transparent
                                             ),
 
                                             modifier = Modifier.clickable {
@@ -488,7 +623,7 @@ fun SettingsScreen(
                                         if (day != 28) {
                                             HorizontalDivider(
                                                 modifier = Modifier.padding(start = 72.dp),
-                                                thickness = 0.6.dp,
+                                                thickness = 0.9.dp,
                                                 color = MaterialTheme.colorScheme.outlineVariant
                                             )
                                         }
@@ -509,46 +644,32 @@ fun SettingsScreen(
                 }
 
                 if (showClearDataDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showClearDataDialog = false },
-                        title = { Text("Confirm Clear All Data") },
-                        text = { Text("This will permanently delete all your expenses and reset your settings\nThis action cannot be undone") },
-                        confirmButton = {
-                            Button(
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                onClick = {
-                                    scope.launch {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        settingsStore.clearAll()
-                                        expenseViewModel.deleteAllData()
-                                        Toast.makeText(
-                                            context,
-                                            "Data deleted successfully!",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                        showClearDataDialog = false
-                                    }
-                                }
-                            ) { Text("Clear Everything") }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showClearDataDialog = false }) {
-                                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    ClearDataDialog(
+                        onConfirm = {
+                            scope.launch {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                settingsStore.clearAll()
+                                expenseViewModel.deleteAllData()
+                                Toast.makeText(
+                                    context,
+                                    "Data deleted successfully!",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
+                        },
+                        onDismiss = { showClearDataDialog = false }
+                    )
+                }
+                if (showPremiumSheet) {
+                    PremiumFeatureSheet(
+                        message = premiumMessage,
+                        onDismiss = { showPremiumSheet = false },
+                        onUpgradeClick = {
+                            showPremiumSheet = false
+                            onNavigateToPremium()
                         }
                     )
-
                 }
             }
         }
-        if (showPremiumSheet) {
-            PremiumFeatureSheet(
-                message = premiumMessage,
-                onDismiss = { showPremiumSheet = false },
-                onUpgradeClick = {
-                    showPremiumSheet = false
-                    onNavigateToPremium()
-                }
-            )
-        }
-    }
+}

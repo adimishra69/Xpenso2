@@ -1,6 +1,8 @@
 package com.example.xpenso.InsightsModel
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,14 +18,17 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.xpenso.InsightMonthComponents.OtherCategoryDialog
 import com.example.xpenso.AppStart.AnalyticsHelper
 import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
 import com.example.xpenso.InsightMonthComponents.CategoryDonutChart
 import com.example.xpenso.InsightMonthComponents.CategoryLegend
 import com.example.xpenso.InsightMonthComponents.InsightSummaryCard
+import com.example.xpenso.InsightMonthComponents.OtherCategoryItem
 import com.example.xpenso.InsightMonthComponents.SimpleBarChart
 import com.example.xpenso.InsightMonthComponents.SmartInsightAnimatedText
 import com.example.xpenso.InsightMonthComponents.generateSmartInsight
+import com.example.xpenso.InsightMonthComponents.toDisplayUpper
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.Transaction.ExpenseCategory
 import com.example.xpenso.ui.theme.LocalBudgetColors
@@ -43,19 +48,24 @@ fun MonthViewContent(
     settingsStore: SettingsStore,
     startOfMonth: Int,
     onCategoryClick: (String, Long, Long) -> Unit,
-    onPremiumRequired: () -> Unit
+//    onPremiumRequired: () -> Unit
 ) {
     // ── All original logic — untouched ───────────────────────────────────────
     val isPremium by settingsStore.isPremium.collectAsState(initial = false)
     val haptic = LocalHapticFeedback.current
+    var showBreakdown by remember { mutableStateOf(false) }
     val allExpenses by expenseViewModel.allExpenses.collectAsState(initial = emptyList())
+    var showOtherDialog by remember { mutableStateOf(false) }
+    var otherDialogCategories by remember {
+        mutableStateOf<List<OtherCategoryItem>>(emptyList())
+    }
 
     LaunchedEffect(Unit) { AnalyticsHelper.trackScreen("InsightsMonth") }
 
     val monthlyTrend = remember(allExpenses, startOfMonth) {
         val trend = mutableListOf<MonthlyTrendData>()
         val cal = Calendar.getInstance()
-        for (i in 0 until 12) {
+        for (i in 0 until 24) {
             val currentCal = cal.clone() as Calendar
             currentCal.add(Calendar.MONTH, -i)
             val month = currentCal.get(Calendar.MONTH)
@@ -68,6 +78,7 @@ fun MonthViewContent(
                 add(Calendar.MONTH, 1)
                 add(Calendar.MILLISECOND, -1)
             }
+
             val total = allExpenses
                 .filter { it.timestamp in startCal.timeInMillis..endCal.timeInMillis }
                 .sumOf { it.amount }
@@ -75,6 +86,10 @@ fun MonthViewContent(
             trend.add(MonthlyTrendData(label = label, amount = total, month = month, year = year))
         }
         trend.reversed()
+    }
+
+    BackHandler(enabled = showBreakdown) {
+        showBreakdown = false
     }
 
     var selectedMonthIndex by rememberSaveable { mutableIntStateOf(monthlyTrend.lastIndex) }
@@ -128,11 +143,13 @@ fun MonthViewContent(
         }
         val daysInPeriod =
             ((endCalForDays.timeInMillis - startCalForDays.timeInMillis) / (1000 * 60 * 60 * 24)).toInt() + 1
-        val daysConsideredForAverage = if (startCalForDays.before(Calendar.getInstance())) {
-            val today = Calendar.getInstance()
+
+        val today = Calendar.getInstance()
+        val daysConsideredForAverage = if (startCalForDays.before(today)) {
             if (endCalForDays.before(today)) daysInPeriod
             else ((today.timeInMillis - startCalForDays.timeInMillis) / (1000 * 60 * 60 * 24)).toInt() + 1
         } else 0
+
         val avg = if (daysConsideredForAverage > 0) total / daysConsideredForAverage else 0.0
         val groupedDays = monthExpenses.groupBy {
             Calendar.getInstance().apply { timeInMillis = it.timestamp }.get(Calendar.DAY_OF_MONTH)
@@ -152,53 +169,78 @@ fun MonthViewContent(
         )
         InsightStats(total, avg, highestAmount, highestLabel, monthName)
     }
+    var mergedCategories by remember { mutableStateOf<List<ExpenseCategory>>(emptyList()) }
+    var hasRealOther by remember { mutableStateOf(false) }
 
     val pieChartData = remember(selectedMonthExpenses) {
-        if (selectedMonthExpenses.isEmpty()) return@remember emptyList<CategoryPieData>()
+        if (selectedMonthExpenses.isEmpty())
+            return@remember emptyList<CategoryPieData>()
+
         val totalExpensesAmount = selectedMonthExpenses.sumOf { it.amount }
-        if (totalExpensesAmount == 0.0) return@remember emptyList()
+
+        if (totalExpensesAmount == 0.0)
+            return@remember emptyList()
+
         val MIN_PERCENT_FOR_SEPARATE_SLICE = 2f
+
         val rawCategoryAmounts = selectedMonthExpenses
-            .groupBy { ExpenseCategory.detect(it.title) }
+            .groupBy {
+                ExpenseCategory.entries
+                    .find { cat -> cat.name == it.category }
+                    ?: ExpenseCategory.OTHER
+            }
             .mapValues { it.value.sumOf { e -> e.amount } }
+
         val finalSliceAmounts = mutableMapOf<ExpenseCategory, Double>()
         var otherAggregatedAmount = 0.0
+        val mergedCategoriesLocal = mutableListOf<ExpenseCategory>()
+        var hasRealOtherLocal = false
+
         rawCategoryAmounts.forEach { (category, amount) ->
             val percentage = (amount / totalExpensesAmount) * 100f
             when {
-                category == ExpenseCategory.OTHER -> otherAggregatedAmount += amount
-                percentage > MIN_PERCENT_FOR_SEPARATE_SLICE -> finalSliceAmounts[category] = amount
-                else -> otherAggregatedAmount += amount
+                category == ExpenseCategory.OTHER -> {
+                    otherAggregatedAmount += amount
+                    hasRealOtherLocal = true
+                }
+                percentage >= MIN_PERCENT_FOR_SEPARATE_SLICE -> {
+                    finalSliceAmounts[category] = amount
+                }
+                else -> {
+                    otherAggregatedAmount += amount
+                    mergedCategoriesLocal.add(category)
+                }
             }
         }
+
+        // ALWAYS add OTHER to finalSliceAmounts if there is any amount,
+        // even if it's tiny (e.g. £35). The donut filters >= 1% itself,
+        // but the legend needs to receive every category to display correctly.
         if (otherAggregatedAmount > 0.0) {
             finalSliceAmounts[ExpenseCategory.OTHER] =
                 (finalSliceAmounts[ExpenseCategory.OTHER] ?: 0.0) + otherAggregatedAmount
         }
+
         val finalPieData = mutableListOf<CategoryPieData>()
-        var currentSumOfPercentages = 0
+
         finalSliceAmounts.forEach { (category, amount) ->
-            val percentage = ((amount / totalExpensesAmount) * 100f).toInt()
+            val rawPercentage = (amount / totalExpensesAmount).toFloat()
             finalPieData.add(
                 CategoryPieData(
                     categoryName = category.name.uppercase(),
                     amount = amount,
-                    percentage = percentage / 100f,
+                    percentage = rawPercentage,
                     color = category.color
                 )
             )
-            currentSumOfPercentages += percentage
         }
-        val difference = 100 - currentSumOfPercentages
-        if (difference != 0 && finalPieData.isNotEmpty()) {
-            val largestSliceIndex = finalPieData.indices.maxByOrNull { finalPieData[it].percentage }
-            if (largestSliceIndex != null) {
-                val originalSlice = finalPieData[largestSliceIndex]
-                finalPieData[largestSliceIndex] =
-                    originalSlice.copy(percentage = originalSlice.percentage + (difference / 100f))
-            }
-        }
-        finalPieData.filter { it.percentage > 0f }.sortedByDescending { it.amount }
+
+        mergedCategories = mergedCategoriesLocal
+        hasRealOther = hasRealOtherLocal
+
+        // No percentage filter here — pass everything to legend.
+        // CategoryDonutChart does its own >= 1% filter before drawing.
+        finalPieData.sortedByDescending { it.amount }
     }
 
     // ── Design tokens ────────────────────────────────────────────────────────
@@ -292,8 +334,11 @@ fun MonthViewContent(
             Spacer(Modifier.height(16.dp))
 
             Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable { showBreakdown = !showBreakdown },
+
+                shape = RoundedCornerShape(24.dp),
                 color = colorScheme.surface,
                 tonalElevation = 1.dp
             ) {
@@ -309,23 +354,78 @@ fun MonthViewContent(
             Spacer(Modifier.height(16.dp))
 
             // Legend — no extra card, let items breathe
-            CategoryLegend(
-                data = pieChartData,
-                currencySymbol = currencySymbol,
-                onCategoryClick = { categoryName ->
-                    if (!isPremium) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onPremiumRequired()
-                        return@CategoryLegend
-                    }
-                    currentMonthRange?.let { (start, end) ->
-                        onCategoryClick(categoryName, start, end)
-                    }
-                }
-            )
 
-            Spacer(Modifier.height(40.dp))
+            if (showBreakdown) {
+                CategoryLegend(
+                    data = pieChartData,
+                    currencySymbol = currencySymbol,
+                    onCategoryClick = { categoryName ->
+
+//                    if (!isPremium) {
+//                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+//                        onPremiumRequired()
+//                        return@CategoryLegend
+//                    }
+
+                        if (categoryName == "OTHER" && mergedCategories.isNotEmpty()) {
+
+                            val dialogItems = buildList {
+
+                                if (hasRealOther) {
+
+                                    val otherAmount = selectedMonthExpenses
+                                        .filter {
+                                            (ExpenseCategory.entries
+                                                .find { cat -> cat.name == it.category }
+                                                ?: ExpenseCategory.OTHER
+                                                    ) == ExpenseCategory.OTHER
+                                        }
+                                        .sumOf { it.amount }
+
+                                    add(
+                                        OtherCategoryItem(
+                                            name = "OTHER",
+                                            amount = otherAmount,
+                                            color = ExpenseCategory.OTHER.color
+                                        )
+                                    )
+                                }
+
+                                mergedCategories.forEach { category ->
+
+                                    val amount = selectedMonthExpenses
+                                        .filter {
+                                            (ExpenseCategory.entries
+                                                .find { cat -> cat.name == it.category }
+                                                ?: ExpenseCategory.OTHER
+                                                    ) == category
+                                        }
+                                        .sumOf { it.amount }
+
+                                    add(
+                                        OtherCategoryItem(
+                                            name = category.name.toDisplayUpper(),
+                                            amount = amount,
+                                            color = category.color
+                                        )
+                                    )
+                                }
+                            }
+
+                            otherDialogCategories = dialogItems
+                            showOtherDialog = true
+                        } else {
+                            currentMonthRange?.let { (start, end) ->
+                                onCategoryClick(categoryName, start, end)
+                            }
+                        }
+                    }
+                )
+                Spacer(Modifier.height(40.dp))
+            }
         }
+
+
 
         // ── Summary section ──────────────────────────────────────────────────
         PremiumSectionHeader(title = "Spending Summary • ${insightStats.monthName}")
@@ -335,6 +435,24 @@ fun MonthViewContent(
         InsightSummaryCard(currencySymbol, insightStats)
 
         Spacer(Modifier.height(28.dp))
+    }
+    if (showOtherDialog) {
+
+        OtherCategoryDialog(
+
+            categories = otherDialogCategories,
+            currencySymbol = currencySymbol,
+            onDismiss = {
+                showOtherDialog = false
+            },
+
+            onCategoryClick = { category ->
+
+                currentMonthRange?.let { (start, end) ->
+                    onCategoryClick(category, start, end)
+                }
+            }
+        )
     }
 }
 
@@ -362,3 +480,96 @@ private fun PremiumSectionHeader(title: String) {
         )
     }
 }
+
+//val pieChartData = remember(selectedMonthExpenses) {
+//    if (selectedMonthExpenses.isEmpty())
+//        return@remember emptyList<CategoryPieData>()
+//
+//    val totalExpensesAmount =
+//        selectedMonthExpenses.sumOf { it.amount }
+//
+//    if (totalExpensesAmount == 0.0)
+//        return@remember emptyList()
+//
+//    // Minimum % a slice needs to get its own arc in the donut.
+//    // Below this it becomes visually invisible but still draws a gap — ugly.
+//    val MIN_PERCENT_FOR_SEPARATE_SLICE = 2f
+//
+//    val rawCategoryAmounts =
+//        selectedMonthExpenses
+//            .groupBy { ExpenseCategory.detect(it.title) }
+//            .mapValues { it.value.sumOf { e -> e.amount } }
+//
+//    val finalSliceAmounts =
+//        mutableMapOf<ExpenseCategory, Double>()
+//
+//    var otherAggregatedAmount = 0.0
+//
+//    val mergedCategoriesLocal =
+//        mutableListOf<ExpenseCategory>()
+//
+//    var hasRealOtherLocal = false
+//
+//    rawCategoryAmounts.forEach { (category, amount) ->
+//
+//        val percentage =
+//            (amount / totalExpensesAmount) * 100f
+//
+//        when {
+//
+//            category == ExpenseCategory.OTHER -> {
+//                otherAggregatedAmount += amount
+//                hasRealOtherLocal = true
+//            }
+//
+//            percentage > MIN_PERCENT_FOR_SEPARATE_SLICE -> {
+//                finalSliceAmounts[category] = amount
+//            }
+//
+//            else -> {
+//                otherAggregatedAmount += amount
+//                mergedCategoriesLocal.add(category)
+//            }
+//        }
+//    }
+//
+//    if (otherAggregatedAmount > 0.0) {
+//        finalSliceAmounts[ExpenseCategory.OTHER] =
+//            (finalSliceAmounts[ExpenseCategory.OTHER] ?: 0.0) +
+//                    otherAggregatedAmount
+//    }
+//
+//    val finalPieData =
+//        mutableListOf<CategoryPieData>()
+//
+//    finalSliceAmounts.forEach { (category, amount) ->
+//
+//        val rawPercentage =
+//            (amount / totalExpensesAmount).toFloat()
+//
+//        finalPieData.add(
+//            CategoryPieData(
+//                categoryName = category.name.uppercase(),
+//                amount = amount,
+//                percentage = rawPercentage,
+//                color = category.color
+//            )
+//        )
+//    }
+//
+//    mergedCategories = mergedCategoriesLocal
+//    hasRealOther = hasRealOtherLocal
+//
+//    finalPieData
+//        // ── FIX ──────────────────────────────────────────────────────────
+//        // Drop any slice whose percentage is too small to draw a visible arc.
+//        // Previously `> 0f` let near-zero slices through — they drew an
+//        // invisible arc but the gap angle still appeared, causing the
+//        // white notch artifact visible in both screenshot scenarios.
+//        // 0.5% (0.005f) is the minimum for a visually meaningful arc at
+//        // the donut's circumference. Anything below is pure visual noise.
+//        .filter { it.percentage >= 0.005f }
+//        // ─────────────────────────────────────────────────────────────────
+//        .sortedByDescending { it.amount }
+//}
+

@@ -1,6 +1,7 @@
 package com.example.xpenso.Settings
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,7 +14,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
@@ -95,7 +97,7 @@ fun SecurityScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(22.dp))
 
             // ── Security Toggle Card ──
             SecuritySettingCard(
@@ -123,7 +125,7 @@ fun SecurityScreen(
                 exit = shrinkVertically(animationSpec = tween(200)) + fadeOut()
             ) {
                 Column {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(16.dp))
 
                     SecuritySettingCard(
                         icon = Icons.Default.Fingerprint,
@@ -133,54 +135,17 @@ fun SecurityScreen(
                         onCheckedChange = toggleBiometrics
                     )
 
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(16.dp))
 
                     // Change PIN row
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        tonalElevation = 1.dp
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { isSettingPin = true }
-                                .padding(horizontal = 20.dp, vertical = 18.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                modifier = Modifier.size(42.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Default.Security,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.width(14.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Change PIN", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                                Text(
-                                    "Update your 6-digit security code",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.Lock, // use ChevronRight if available
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
+                    SecuritySettingCard(
+                        icon = Icons.Default.Security,
+                        title = "Change PIN",
+                        subtitle = "Update your 6-digit security code",
+                        onClick = {
+                            isSettingPin = true
                         }
-                    }
+                    )
                 }
             }
         }
@@ -194,6 +159,14 @@ fun SecurityScreen(
                 scope.launch {
                     settingsStore.saveSecurityPin(pin)
                     settingsStore.saveSecurityEnabled(true)
+
+
+                    Toast.makeText(
+                        context,
+                        if (isSecurityEnabled) "PIN updated successfully"
+                        else "PIN set successfully",
+                        Toast.LENGTH_SHORT
+                    ).show()
 
                     onPinCreated()   // ✅ THIS WAS MISSING
 
@@ -212,19 +185,21 @@ private fun SecuritySettingCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
+    checked: Boolean? = null,
+    onCheckedChange: ((Boolean) -> Unit)? = null,
+    onClick: (() -> Unit)? = null
+){
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
-        tonalElevation = 1.dp
+        tonalElevation = 2.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable(enabled = onClick != null) { onClick?.invoke() }
                 .padding(horizontal = 20.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -251,10 +226,17 @@ private fun SecuritySettingCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange
-            )
+            if (checked != null) {
+                Switch(
+                    checked = checked,
+                    onCheckedChange = { onCheckedChange?.invoke(it) },
+                    colors = SwitchDefaults.colors(
+                        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        uncheckedBorderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+            }
         }
     }
 }
@@ -273,6 +255,7 @@ fun PinSetupDialog(
     var shakeError by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
 
     // Shake animation for mismatch
     val shakeOffset by animateFloatAsState(
@@ -303,6 +286,8 @@ fun PinSetupDialog(
                     onPinSet(firstPin)
                 }
             } else {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+
                 scope.launch {
                     shakeError = true
                     delay(400)
@@ -507,7 +492,7 @@ fun PinSetupDialog(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text(if (step == PinStep.CONFIRM) "Back" else "Cancel")
+                        Text(if (step == PinStep.CONFIRM) "Back" else "Cancel" ,  color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     if (step == PinStep.CONFIRM) {
@@ -656,6 +641,8 @@ private fun InlineNumpad(
         listOf("", "0", "⌫")
     )
 
+    val haptic = LocalHapticFeedback.current
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -681,6 +668,8 @@ private fun InlineNumpad(
                                         indication = null,
                                         enabled = enabled
                                     ) {
+
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         if (isDelete) {
                                             if (pin.isNotEmpty()) onPinChange(pin.dropLast(1))
                                         } else {

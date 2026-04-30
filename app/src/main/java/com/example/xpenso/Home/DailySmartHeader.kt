@@ -93,7 +93,7 @@ fun DailySmartHeader(
         Text(
             text = finalMessage.uppercase(),
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.Bold,
             color = finalColor,
             letterSpacing = 1.6.sp,
             modifier = Modifier.graphicsLayer { 

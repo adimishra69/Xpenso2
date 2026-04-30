@@ -12,11 +12,28 @@ import java.util.*
 
 object PdfReportGenerator {
 
-    private const val COLOR_PRIMARY = 0xFF1A73E8.toInt()
-    private const val COLOR_TEXT_MAIN = 0xFF202124.toInt()
-    private const val COLOR_TEXT_SEC = 0xFF5F6368.toInt()
-    private const val COLOR_BG_LIGHT = 0xFFF8F9FA.toInt()
+    private const val COLOR_PRIMARY   = 0xFF3949AB.toInt() // Indigo Primary (Premium Header / Bars)
 
+    private const val COLOR_TEXT_MAIN = 0xFF202124.toInt() // Main Text (unchanged)
+
+    private const val COLOR_TEXT_SEC  = 0xFF5F6368.toInt() // Secondary Text (unchanged)
+
+    private const val COLOR_BG_LIGHT  = 0xFFF8F9FA.toInt() // Light Background (unchanged)
+
+    // ── page / layout constants ──────────────────────────────────────────────
+    private const val PAGE_W  = 595
+    private const val PAGE_H  = 842
+    private const val MARGIN  = 40f
+    private val CONTENT_W get() = PAGE_W - MARGIN * 2   // 515
+
+    // ── table column X positions ─────────────────────────────────────────────
+    private val COL_DATE = MARGIN + 10f
+    private val COL_DESC = MARGIN + 95f
+    private val COL_CAT  = MARGIN + 244f
+    private val COL_MODE = MARGIN + 364f
+    private val COL_AMT  = PAGE_W - MARGIN - 8f   // right-aligned
+
+    // ────────────────────────────────────────────────────────────────────────
     fun generateExpenseReport(
         context: Context,
         uri: Uri,
@@ -28,357 +45,314 @@ object PdfReportGenerator {
         if (expenses.isEmpty()) return Result.failure(Exception("No data to export"))
 
         return try {
-
             val document = PdfDocument()
+            val pageInfo = PdfDocument.PageInfo.Builder(PAGE_W, PAGE_H, 1).create()
 
-            val pageWidth = 595
-            val pageHeight = 842
-            val margin = 40f
-
-            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
-
-            val watermarkPaint = Paint().apply {
-                textSize = 75f
-                color = Color.LTGRAY
-                alpha = 35
-                textAlign = Paint.Align.CENTER
-            }
-
-            var pageNumber = 1
-            var page = document.startPage(pageInfo)
-            var canvas = page.canvas
-
-            var yPos = 0f
-
+            // ── paints ───────────────────────────────────────────────────────
             val brandPaint = TextPaint().apply {
-                textSize = 28f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                color = Color.WHITE
-                letterSpacing = 0.1f
+                textSize = 28f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color = Color.WHITE; letterSpacing = 0.1f
             }
-
             val titlePaint = TextPaint().apply {
-                textSize = 18f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                color = COLOR_TEXT_MAIN
+                textSize = 13f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color = COLOR_TEXT_MAIN; letterSpacing = 0.08f
             }
-
             val labelPaint = TextPaint().apply {
-                textSize = 10f
-                color = COLOR_TEXT_SEC
+                textSize = 9f; color = COLOR_TEXT_SEC
             }
-
             val valuePaint = TextPaint().apply {
-                textSize = 14f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textSize = 13f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 color = COLOR_PRIMARY
             }
-
             val tableHeaderPaint = TextPaint().apply {
-                textSize = 10f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textSize = 9f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 color = Color.WHITE
             }
-
             val rowPaint = TextPaint().apply {
-                textSize = 9f
-                color = COLOR_TEXT_MAIN
+                textSize = 8.5f; color = COLOR_TEXT_MAIN
             }
-
+            val rowSecPaint = TextPaint().apply {
+                textSize = 8.5f; color = COLOR_TEXT_SEC
+            }
             val amountPaint = TextPaint(rowPaint).apply {
                 textAlign = Paint.Align.RIGHT
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                typeface  = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color     = COLOR_PRIMARY
             }
-
             val footerPaint = TextPaint().apply {
-                textSize = 8f
+                textSize = 8f; textAlign = Paint.Align.CENTER; color = COLOR_TEXT_SEC
+            }
+            val watermarkPaint = Paint().apply {
+                textSize = 75f; color = Color.LTGRAY; alpha = 35
                 textAlign = Paint.Align.CENTER
-                color = COLOR_TEXT_SEC
             }
-
-            val bgPaint = Paint()
-
-            val progressPaint = Paint().apply {
-                color = COLOR_PRIMARY
+            val dividerPaint = Paint().apply {
+                color = 0xFFE0E0E0.toInt(); strokeWidth = 0.7f
             }
+            val bgPaint  = Paint()
+            val barPaint = Paint().apply { color = COLOR_PRIMARY }
 
             val currency = currencySymbol
 
-            val totalAmount = expenses.sumOf { it.amount }
-            val avgExpense = totalAmount / expenses.size
-            val highestExpense = expenses.maxByOrNull { it.amount }
+            // ── aggregates ───────────────────────────────────────────────────
+            val totalAmount     = expenses.sumOf { it.amount }
+            val avgExpense      = totalAmount / expenses.size
+            val highestExpense  = expenses.maxByOrNull { it.amount }
+            val lowestExpense   = expenses.minByOrNull { it.amount }
 
             val minDate = expenses.minOf { it.timestamp }
             val maxDate = expenses.maxOf { it.timestamp }
 
-            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+            val dateFormat  = SimpleDateFormat("dd MMM yyyy ", Locale.getDefault())
+            val periodText  = "${dateFormat.format(Date(minDate))} – ${dateFormat.format(Date(maxDate))}"
 
-            val periodText =
-                "${dateFormat.format(Date(minDate))} - ${dateFormat.format(Date(maxDate))}"
+            val modeMap = expenses.groupBy {
+                when {
+                    it.paymentMode.contains("Card", true) -> "Card"
+                    it.paymentMode.isBlank()               -> "Un" +
+                            "known"
+                    else                                   -> it.paymentMode
+                }
+            }.mapValues { it.value.size }
+            val maxMode     = modeMap.maxByOrNull { it.value }
+            val modePercent = if (expenses.isNotEmpty()) ((maxMode?.value ?: 0) * 100 / expenses.size) else 0
+            val mostUsedMode= "${maxMode?.key ?: "-"} ($modePercent%)"
 
+            // ── state vars ───────────────────────────────────────────────────
+            var pageNumber = 1
+            var page       = document.startPage(pageInfo)
+            var canvas     = page.canvas
+
+            val today = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
+
+            // ── helpers ──────────────────────────────────────────────────────
+            fun newPage() {
+                drawWatermark(canvas, PAGE_W, PAGE_H, watermarkPaint, isPremium)
+                drawFooter(canvas, pageNumber, PAGE_W, PAGE_H, footerPaint)
+                document.finishPage(page)
+                pageNumber++
+                page   = document.startPage(pageInfo)
+                canvas = page.canvas
+            }
+
+            fun sectionTitle(c: Canvas, text: String, y: Float): Float {
+                c.drawText(text, MARGIN, y, titlePaint)
+                c.drawLine(MARGIN, y + 4f, PAGE_W - MARGIN, y + 4f, dividerPaint)
+                return y + 20f
+            }
+
+            fun drawTableHeader(c: Canvas, y: Float): Float {
+                bgPaint.color = COLOR_PRIMARY
+                c.drawRect(MARGIN, y, PAGE_W - MARGIN, y + 26f, bgPaint)
+                tableHeaderPaint.textAlign = Paint.Align.LEFT
+                c.drawText("DATE",        COL_DATE, y + 17f, tableHeaderPaint)
+                c.drawText("DESCRIPTION", COL_DESC, y + 17f, tableHeaderPaint)
+                c.drawText("CATEGORY",    COL_CAT,  y + 17f, tableHeaderPaint)
+                c.drawText("MODE",        COL_MODE, y + 17f, tableHeaderPaint)
+                tableHeaderPaint.textAlign = Paint.Align.RIGHT
+                c.drawText("AMOUNT",      COL_AMT,  y + 17f, tableHeaderPaint)
+                tableHeaderPaint.textAlign = Paint.Align.LEFT
+                return y + 26f
+            }
+
+            // ── PAGE 1: HEADER ───────────────────────────────────────────────
             bgPaint.color = COLOR_PRIMARY
-            canvas.drawRect(0f, 0f, pageWidth.toFloat(), 100f, bgPaint)
+            canvas.drawRect(0f, 0f, PAGE_W.toFloat(), 100f, bgPaint)
 
-            canvas.drawText("XPENSO", margin, 60f, brandPaint)
+            canvas.drawText("XPENSO", MARGIN, 60f, brandPaint)
 
-            labelPaint.color = Color.WHITE
-            val subtitle =
-                if (isPremium) "Premium Financial Statement"
-                else "Basic Expense Report"
-
-            canvas.drawText(subtitle, margin, 80f, labelPaint)
-
-            val today = SimpleDateFormat(
-                "dd MMM yyyy, hh:mm a",
-                Locale.getDefault()
-            ).format(Date())
+            labelPaint.color = Color.WHITE; labelPaint.textAlign = Paint.Align.LEFT
+            val subtitle = if (isPremium) " Complete Financial Report" else "Summary Financial Report"
+            canvas.drawText(subtitle, MARGIN, 80f, labelPaint)
 
             labelPaint.textAlign = Paint.Align.RIGHT
-            canvas.drawText("Generated: $today", pageWidth - margin, 80f, labelPaint)
+            canvas.drawText("Generated: $today", PAGE_W - MARGIN, 80f, labelPaint)
 
-            labelPaint.textAlign = Paint.Align.LEFT
-            labelPaint.color = COLOR_TEXT_SEC
+            labelPaint.textAlign = Paint.Align.LEFT; labelPaint.color = COLOR_TEXT_SEC
+            canvas.drawText("Period: $periodText", MARGIN, 115f, labelPaint)
 
-            canvas.drawText("Period: $periodText", margin, 115f, labelPaint)
+            var yPos = 138f
 
-            yPos = 150f
+            // ── REPORT SUMMARY ───────────────────────────────────────────────
+            yPos = sectionTitle(canvas, "REPORT SUMMARY", yPos)
+            yPos += 6f
 
-            canvas.drawText("REPORT SUMMARY", margin, yPos, titlePaint)
-            yPos += 30
-
+            val summaryH = 116f
             bgPaint.color = COLOR_BG_LIGHT
+            canvas.drawRoundRect(RectF(MARGIN, yPos, PAGE_W - MARGIN, yPos + summaryH), 10f, 10f, bgPaint)
 
-            canvas.drawRoundRect(
-                RectF(margin, yPos - 20, pageWidth - margin, yPos + 60),
-                12f,
-                12f,
-                bgPaint
-            )
+            val c1 = MARGIN + 18f;  val c2 = MARGIN + 185f;  val c3 = MARGIN + 360f
+            val r1L = yPos + 20f;   val r1V = yPos + 36f
+            val r2L = yPos + 62f;   val r2V = yPos + 78f
+            val r3L = yPos + 96f
 
-            canvas.drawText("Total Expenses", margin + 20, yPos, labelPaint)
-            canvas.drawText(
-                "$currency ${String.format("%,.0f", totalAmount)}",
-                margin + 20,
-                yPos + 20,
-                valuePaint
-            )
-            canvas.drawText("Transactions", margin + 200, yPos, labelPaint)
-            canvas.drawText("${expenses.size}", margin + 200, yPos + 20, valuePaint)
+            // row 1
+            canvas.drawText("Total Expenses",    c1, r1L, labelPaint)
+            canvas.drawText("$currency ${fmt(totalAmount)}", c1, r1V, valuePaint)
+            canvas.drawText("Transactions",       c2, r1L, labelPaint)
+            canvas.drawText("${expenses.size} Entries", c2, r1V, valuePaint)
+            canvas.drawText("Most Used Mode",     c3, r1L, labelPaint)
+            canvas.drawText(mostUsedMode,          c3, r1V, valuePaint)
+            // row 2
+            canvas.drawText("Average Expense",   c1, r2L, labelPaint)
+            canvas.drawText("$currency ${fmt(avgExpense)}", c1, r2V, valuePaint)
+            canvas.drawText("Highest Expense",   c2, r2L, labelPaint)
+            canvas.drawText("$currency ${fmt(highestExpense?.amount ?: 0.0)}", c2, r2V, valuePaint)
+            canvas.drawText("Lowest Expense",    c3, r2L, labelPaint)
+            canvas.drawText("$currency ${fmt(lowestExpense?.amount ?: 0.0)}", c3, r2V, valuePaint)
 
-            canvas.drawText("Average Expense", margin + 350, yPos, labelPaint)
-            canvas.drawText(
-                "$currency ${String.format("%,.0f", avgExpense)}",
-                margin + 350,
-                yPos + 20,
-                valuePaint
-            )
+            yPos += summaryH + 22f
 
-            highestExpense?.let {
-                canvas.drawText("Highest Expense", margin + 350, yPos + 35, labelPaint)
-                canvas.drawText(
-                    "$currency ${String.format("%,.0f", it.amount)}",
-                    margin + 350,
-                    yPos + 55,
-                    valuePaint
-                )
-            }
+            // ── CATEGORY SPENDING ────────────────────────────────────────────
+            // AFTER — all categories, sorted by amount, no merging
+            val categorySummary = expenses
+                .groupBy {
+                    ExpenseCategory.entries
+                        .find { cat -> cat.name == it.category }
+                        ?: ExpenseCategory.OTHER
+                }
+                .mapValues { it.value.sumOf { e -> e.amount } }
+                .toList()
+                .sortedByDescending { it.second }
 
-            yPos += 90
+            yPos = sectionTitle(canvas, "CATEGORY SPENDING", yPos)
+            yPos += 6f
 
-            if (isPremium) {
+            val catBlockH = (categorySummary.size * 26f) + 20f
+            bgPaint.color = COLOR_BG_LIGHT
+            canvas.drawRoundRect(RectF(MARGIN, yPos, PAGE_W - MARGIN, yPos + catBlockH), 10f, 10f, bgPaint)
 
-                canvas.drawText("CATEGORY SPENDING", margin, yPos, titlePaint)
-                yPos += 20
+            var catY        = yPos + 18f
+            var accumulated = 0
+            val barStart    = MARGIN + 155f
+            val barMaxW     = CONTENT_W - 155f - 60f
 
-                val categorySummary = expenses
-                    .groupBy { ExpenseCategory.detect(it.title) }
-                    .mapValues { it.value.sumOf { e -> e.amount } }
-                    .toList()
-                    .sortedByDescending { it.second }
-                    .take(4)
+            // AFTER
+            categorySummary.forEachIndexed { index, (cat, amt) ->
+                // AFTER
+                val percent = amt / totalAmount * 100
+                val percentStr = if (percent < 1.0 && percent > 0.0) String.format("%.2f%%", percent) else "${percent.toInt()}%"
+                val name = cat.name.replace("_"," ").lowercase().replaceFirstChar { it.uppercase() }
 
-                var startX = margin
+                val barW = (percent / 100.0 * barMaxW).toFloat().coerceAtLeast(if (percent > 0.0) 2f else 0f)
 
-                categorySummary.forEach { (cat, amt) ->
 
-                    val percent = (amt / totalAmount * 100).toInt()
+                canvas.drawText(name, MARGIN + 14f, catY, labelPaint)
 
-                    val name = cat.name
-                        .replace("_", " ")
-                        .lowercase()
-                        .replaceFirstChar { it.uppercase() }
-
-                    canvas.drawText(name, startX, yPos, labelPaint)
-
-                    val barWidth = percent * 1.2f
-
-                    canvas.drawRect(
-                        startX,
-                        yPos + 5,
-                        startX + barWidth,
-                        yPos + 12,
-                        progressPaint
-                    )
-
-                    canvas.drawText("$percent%", startX + barWidth + 6, yPos + 12, labelPaint)
-
-                    startX += 130f
+                // track
+                bgPaint.color = 0xFFE3F2FD.toInt()
+                canvas.drawRoundRect(RectF(barStart, catY - 7f, barStart + barMaxW, catY + 4f), 3f, 3f, bgPaint)
+                // fill
+                if (barW > 0f) {
+                    bgPaint.color = COLOR_PRIMARY
+                    canvas.drawRoundRect(RectF(barStart, catY - 7f, barStart + barW, catY + 4f), 3f, 3f, bgPaint)
                 }
 
-                yPos += 40
+                // AFTER
+                canvas.drawText(percentStr, barStart + barMaxW + 8f, catY, valuePaint)
+                catY += 26f
             }
 
-            val colDate = margin + 10
-            val colDesc = margin + 80
-            val colCat = margin + 240
-            val colMode = margin + 360
-            val colAmt = pageWidth - margin - 10
+            yPos += catBlockH + 22f
 
-            fun drawTableHeader(y: Float) {
+            // ── TRANSACTIONS TABLE ───────────────────────────────────────────
+            yPos = sectionTitle(canvas, "ALL TRANSACTIONS  (${expenses.size} records)", yPos)
+            yPos += 4f
 
-                bgPaint.color = COLOR_PRIMARY
-                canvas.drawRect(margin, y, pageWidth - margin, y + 25, bgPaint)
+            yPos = drawTableHeader(canvas, yPos)
 
-                tableHeaderPaint.textAlign = Paint.Align.LEFT
-                canvas.drawText("DATE", colDate, y + 16, tableHeaderPaint)
-                canvas.drawText("DESCRIPTION", colDesc, y + 16, tableHeaderPaint)
-                canvas.drawText("CATEGORY", colCat, y + 16, tableHeaderPaint)
-                canvas.drawText("MODE", colMode, y + 16, tableHeaderPaint)
+            val tableDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
-                tableHeaderPaint.textAlign = Paint.Align.RIGHT
-                canvas.drawText("AMOUNT", colAmt, y + 16, tableHeaderPaint)
-            }
+            // AFTER — newest date first
+            val sortedExpenses = expenses.sortedByDescending { it.timestamp }
+            sortedExpenses.forEachIndexed { index, expense ->
 
-            drawTableHeader(yPos)
-
-            yPos += 25
-
-            val tableDate = SimpleDateFormat("dd/MM/yy", Locale.getDefault())
-
-            expenses.forEachIndexed { index, expense ->
-
-                if (yPos > pageHeight - 80) {
-
-                    drawWatermark(canvas, pageWidth, pageHeight, watermarkPaint , isPremium)
-
-                    drawFooter(canvas, pageNumber, pageWidth, pageHeight, footerPaint)
-
-                    document.finishPage(page)
-
-                    pageNumber++
-
-                    page = document.startPage(pageInfo)
-                    canvas = page.canvas
-
-                    yPos = margin
-
-                    drawTableHeader(yPos)
-
-                    yPos += 25
+                // page break
+                if (yPos > PAGE_H - 80f) {
+                    newPage()
+                    yPos = MARGIN
+                    yPos = sectionTitle(canvas, "ALL TRANSACTIONS (continued)", yPos)
+                    yPos += 4f
+                    yPos = drawTableHeader(canvas, yPos)
                 }
 
+                // alternating row bg
                 if (index % 2 != 0) {
-
                     bgPaint.color = COLOR_BG_LIGHT
-
-                    canvas.drawRect(
-                        margin,
-                        yPos,
-                        pageWidth - margin,
-                        yPos + 24,
-                        bgPaint
-                    )
+                    canvas.drawRect(MARGIN, yPos, PAGE_W - MARGIN, yPos + 24f, bgPaint)
                 }
 
-                val dateStr = tableDate.format(Date(expense.timestamp))
-
-                val category = ExpenseCategory.detect(expense.title)
-                    .name
-                    .replace("_", " ")
+                val dateStr  = tableDate.format(Date(expense.timestamp))
+                val category = (
+                        ExpenseCategory.entries
+                            .find { cat -> cat.name == expense.category }
+                            ?: ExpenseCategory.OTHER
+                        ).name
+                    .replace("_"," ")
                     .lowercase()
                     .replaceFirstChar { it.uppercase() }
+                val mode     = if (expense.paymentMode.isBlank()) "-"
+                else if (expense.paymentMode.contains("Card",true)) "Card"
+                else expense.paymentMode
+                val title    = if (expense.title.length > 20) expense.title.take(17) + "…" else expense.title
 
-                val mode = if (expense.paymentMode.isBlank()) "-" else expense.paymentMode
+                canvas.drawText(dateStr,   COL_DATE, yPos + 15f, rowSecPaint)
+                canvas.drawText(title,     COL_DESC, yPos + 15f, rowPaint)
+                canvas.drawText(category,  COL_CAT,  yPos + 15f, rowSecPaint)
+                canvas.drawText(mode,      COL_MODE, yPos + 15f, rowSecPaint)
+                canvas.drawText("$currency ${fmt(expense.amount)}", COL_AMT, yPos + 15f, amountPaint)
 
-                val title =
-                    if (expense.title.length > 22)
-                        expense.title.take(19) + "..."
-                    else
-                        expense.title
+                // row divider
+                canvas.drawLine(MARGIN, yPos + 24f, PAGE_W - MARGIN, yPos + 24f, dividerPaint)
 
-                canvas.drawText(dateStr, colDate, yPos + 15, rowPaint)
-
-                canvas.drawText(title, colDesc, yPos + 15, rowPaint)
-
-                canvas.drawText(category, colCat, yPos + 15, rowPaint)
-
-                canvas.drawText(mode, colMode, yPos + 15, rowPaint)
-
-                canvas.drawText(
-                    "$currency ${String.format("%,.0f", expense.amount)}",
-                    colAmt,
-                    yPos + 15,
-                    amountPaint
-                )
-
-                yPos += 24
+                yPos += 24f
             }
 
-            drawWatermark(canvas, pageWidth, pageHeight, watermarkPaint , isPremium)
+            // ── grand total row ───────────────────────────────────────────────
+            if (yPos > PAGE_H - 50f) { newPage(); yPos = MARGIN }
+            yPos += 4f
+            bgPaint.color = COLOR_PRIMARY
+            canvas.drawRoundRect(RectF(MARGIN, yPos, PAGE_W - MARGIN, yPos + 26f), 6f, 6f, bgPaint)
+            tableHeaderPaint.textAlign = Paint.Align.LEFT
+            canvas.drawText("TOTAL", COL_DESC, yPos + 17f, tableHeaderPaint)
+            tableHeaderPaint.textAlign = Paint.Align.RIGHT
+            canvas.drawText("$currency ${fmt(totalAmount)}", COL_AMT, yPos + 17f, tableHeaderPaint)
+            tableHeaderPaint.textAlign = Paint.Align.LEFT
 
-            drawFooter(canvas, pageNumber, pageWidth, pageHeight, footerPaint)
-
+            // ── finalize ─────────────────────────────────────────────────────
+            drawWatermark(canvas, PAGE_W, PAGE_H, watermarkPaint, isPremium)
+            drawFooter(canvas, pageNumber, PAGE_W, PAGE_H, footerPaint)
             document.finishPage(page)
 
-            context.contentResolver.openOutputStream(uri)?.use {
-                document.writeTo(it)
-            }
-
+            context.contentResolver.openOutputStream(uri)?.use { document.writeTo(it) }
             document.close()
 
             Result.success(Unit)
 
         } catch (e: Exception) {
-
             Result.failure(e)
         }
     }
 
-    private fun drawFooter(
-        canvas: Canvas,
-        pageNum: Int,
-        width: Int,
-        height: Int,
-        paint: Paint
-    ) {
-
+    // ── footer ───────────────────────────────────────────────────────────────
+    private fun drawFooter(canvas: Canvas, pageNum: Int, width: Int, height: Int, paint: Paint) {
+        val linePaint = Paint().apply { color = 0xFFE0E0E0.toInt(); strokeWidth = 0.7f }
+        canvas.drawLine(40f, height - 44f, width - 40f, height - 44f, linePaint)
         canvas.drawText(
-            "Xpenso • Personal Finance Report • Page $pageNum",
-            width / 2f,
-            height - 30f,
-            paint
+            "Xpenso  •  Personal Finance Report  •  Page $pageNum",
+            width / 2f, height - 30f, paint
         )
     }
+
+    // ── number formatter ─────────────────────────────────────────────────────
+    private fun fmt(value: Double) = String.format("%,.0f", value)
 }
 
- fun drawWatermark(
-    canvas: Canvas,
-    pageWidth: Int,
-    pageHeight: Int,
-    paint: Paint,
-    isPremium:Boolean
-) {
+// ── watermark (kept top-level to match original signature) ───────────────────
+fun drawWatermark(canvas: Canvas, pageWidth: Int, pageHeight: Int, paint: Paint, isPremium: Boolean) {
     if (isPremium) return
     canvas.save()
-
     canvas.rotate(-30f, pageWidth / 2f, pageHeight / 2f)
-
-    canvas.drawText(
-        "XPENSO",
-        pageWidth / 2f,
-        pageHeight / 2f,
-        paint
-    )
-
+    canvas.drawText("XPENSO", pageWidth / 2f, pageHeight / 2f, paint)
     canvas.restore()
 }

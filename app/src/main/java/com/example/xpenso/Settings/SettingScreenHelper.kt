@@ -19,6 +19,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -70,28 +71,29 @@ fun SettingsItem(
     ListItem(
         modifier = if (showArrow) Modifier.clickable { onClick() } else Modifier,
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        leadingContent = { 
+        leadingContent = {
             Icon(
-                icon, 
-                contentDescription = null, 
-                tint = if(textColor == Color.Red) textColor else MaterialTheme.colorScheme.primary,
+                icon,
+                contentDescription = null,
+                tint = if(textColor == Color.Red) textColor else MaterialTheme.colorScheme.primary.copy(.9f
+                ),
                 modifier = Modifier.size(24.dp)
-            ) 
+            )
         },
-        headlineContent = { 
+        headlineContent = {
             Text(
-                title, 
-                color = if(textColor == Color.Unspecified) MaterialTheme.colorScheme.onSurface else textColor, 
+                title,
+                color = if(textColor == Color.Unspecified) MaterialTheme.colorScheme.onSurface else textColor,
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.bodyLarge
-            ) 
+            )
         },
-        supportingContent = { 
+        supportingContent = {
             Text(
-                subtitle, 
+                subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            ) 
+            )
         },
         trailingContent = {
             if (showArrow) {
@@ -143,7 +145,12 @@ fun SettingsSwitchItem(
             Switch(
                 checked = checked, 
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(48.dp),
+                colors = SwitchDefaults.colors(
+                    uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    uncheckedBorderColor = MaterialTheme.colorScheme.outline
+                )
             ) 
         }
     )

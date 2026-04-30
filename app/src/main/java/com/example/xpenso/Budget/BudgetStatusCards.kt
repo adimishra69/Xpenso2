@@ -179,9 +179,9 @@ private fun StatusUI(
 fun CommonNoBudgetView(
     icon: ImageVector,
     title: String,
-    description: String,
-    buttonText: String = "Set Budget",
-    onSetBudgetClick: () -> Unit
+   description: String,
+//    buttonText: String = "Set Budget",
+//    onSetBudgetClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -194,10 +194,10 @@ fun CommonNoBudgetView(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(96.dp),
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.primary.copy(0.9f)
         )
 
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(20.dp))
 
         Text(
             text = title,
@@ -215,19 +215,24 @@ fun CommonNoBudgetView(
             textAlign = TextAlign.Center
         )
 
-        Spacer(Modifier.height(30.dp))
-
-        Button(
-            onClick = onSetBudgetClick,
-            modifier = Modifier
-                .padding(horizontal = 16.dp) // Adds a bit of breathing room
-                .wrapContentWidth()           // Only as wide as the text itself
-        ) {
-            Text(
-                text = buttonText,
-                modifier = Modifier.padding(horizontal = 12.dp) // Space inside the button
-            )
-        }
+//        Spacer(Modifier.height(30.dp))
+//
+//        Button(
+//            onClick = onSetBudgetClick,
+//            shape = RoundedCornerShape(14.dp),
+//            colors = ButtonDefaults.buttonColors(
+//                containerColor = MaterialTheme.colorScheme.primary.copy(0.9f),
+//                contentColor = MaterialTheme.colorScheme.onPrimary
+//            ),
+//            modifier = Modifier
+//                .padding(horizontal = 16.dp) // Adds a bit of breathing room
+//                .wrapContentWidth()           // Only as wide as the text itself
+//        ) {
+//            Text(
+//                text = buttonText,
+//                modifier = Modifier.padding(horizontal = 12.dp) // Space inside the button
+//            )
+//        }
     }
 }
 

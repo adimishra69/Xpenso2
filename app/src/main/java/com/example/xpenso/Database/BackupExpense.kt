@@ -6,8 +6,11 @@ package com.example.xpenso.Database
  */
 data class BackupExpense(
     val id: Long,
+    val title: String?,
     val amount: Double,
-    val category: String,
-    val description: String?,
-    val date: String // Changed from timestamp for readability
+    val category: String?,
+    val notes: String?,
+    val paymentMode: String?,
+//    val currencySymbol: String?,
+    val date: String
 )

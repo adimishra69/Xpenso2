@@ -15,10 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myproject.InsightYearView.YearSelector
+import com.example.xpenso.AddExpenses.displayName
+import com.example.xpenso.InsightYearView.YearSelector
 import com.example.xpenso.InsightsModel.YearlyInsightStats
 import com.example.xpenso.AppStart.AnalyticsHelper
 import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
+import com.example.xpenso.InsightMonthComponents.toDisplayUpper
 import com.example.xpenso.InsightsModel.MonthlySummary
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.Transaction.ExpenseCategory
@@ -100,7 +102,11 @@ fun YearView(
             val expensesInYearRange = allExpenses.filter { it.timestamp in yearStart..yearEnd }
 
             val mostExpensiveCategory = expensesInYearRange
-                .groupBy { ExpenseCategory.detect(it.title) }
+                .groupBy {
+                    ExpenseCategory.entries
+                        .find { cat -> cat.name == it.category }
+                        ?: ExpenseCategory.OTHER
+                }
                 .mapValues { (_, expenses) -> expenses.sumOf { it.amount } }
                 .maxByOrNull { it.value }?.toPair()
 
@@ -174,11 +180,13 @@ fun YearView(
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 yearlyInsightStats.mostExpensiveCategory?.let { (category, _) ->
-                    InsightMetricCard(Icons.Default.Category, "Top Category", category.name.replaceFirstChar { it.uppercase() }, Modifier.weight(1f))
+                    InsightMetricCard(Icons.Default.Category, "Top Category", category.name.toDisplayUpper(), Modifier.weight(1f))
                 }
+
                 yearlyInsightStats.highestSpendingQuarter?.let { (quarter, _) ->
                     InsightMetricCard(Icons.Default.Timeline, "Top Quarter", quarter, Modifier.weight(1f))
                 }
+
             }
         }
 
@@ -195,7 +203,7 @@ fun YearView(
                     else -> Color(0xFF4CAF50)
                 }
 
-                InsightMetricCards(
+                LongInsightMetricCard(
                     icon = Icons.Default.CompareArrows,
                     label = "Year-over-Year",
                     value = buildAnnotatedString {
@@ -243,7 +251,7 @@ fun YearView(
             if (selectedYear == Calendar.getInstance().get(Calendar.YEAR)) {
                 item {
 
-                    InsightMetricCards(
+                    LongInsightMetricCard(
                         icon = Icons.Default.ShowChart,
                         label = "Year Projection",
                         value = buildAnnotatedString {
@@ -279,7 +287,7 @@ fun YearView(
             }
 
             item {
-                InsightMetricCards(
+                LongInsightMetricCard(
                     icon = Icons.Default.Autorenew,
                     label = "Avg. Daily Spend",
                     value = buildAnnotatedString {
@@ -297,7 +305,7 @@ fun YearView(
                 val balance = yearlyInsightStats.yearlyNetBalance
                 val isPositive = balance >= 0
 
-                InsightMetricCards(
+                LongInsightMetricCard(
                     icon = Icons.Default.AccountBalance,
                     label = if (isPositive) "Total Saved" else "Total Overspent",
                     value = buildAnnotatedString {

@@ -2,6 +2,7 @@ package com.example.xpenso.Database
 
 
 import android.content.Context
+import android.widget.Toast
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -10,7 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [ExpenseEntity::class],
-    version = 2,
+    version = 1,
     exportSchema = false
 )
 abstract class ExpenseDatabase : RoomDatabase() {
@@ -25,13 +26,40 @@ abstract class ExpenseDatabase : RoomDatabase() {
         // --- CHANGE: Added migration from version 1 to 2 ---
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add the 'paymentMode' column to the 'expenses' table
-                db.execSQL("ALTER TABLE expenses ADD COLUMN paymentMode TEXT NOT NULL DEFAULT ''")
+
+//                db.execSQL(
+//                    "ALTER TABLE expenses ADD COLUMN paymentMode TEXT NOT NULL DEFAULT ''"
+//                )
+//
+//                db.execSQL(
+//                    "ALTER TABLE expenses ADD COLUMN category TEXT NOT NULL DEFAULT 'OTHER'"
+//                )
+//
+//                db.execSQL(
+//                    "ALTER TABLE expenses ADD COLUMN notes TEXT NOT NULL DEFAULT ''"
+//                )
+
             }
         }
 
         fun getDatabase(context: Context): ExpenseDatabase {
             return INSTANCE ?: synchronized(this) {
+
+                val dbFile = context.getDatabasePath("expense_database")
+
+//                if (!dbFile.exists()) {
+//                   Toast.makeText(
+//                        context.applicationContext,
+//                        "🔥 FIRST TIME DB FILE CREATED",
+//                        android.widget.Toast.LENGTH_LONG
+//                    ).show()
+//                }
+
+//                android.widget.Toast.makeText(
+//                    context.applicationContext,
+//                    "🔥 Database Created",
+//                    android.widget.Toast.LENGTH_SHORT
+//                ).show()
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     ExpenseDatabase::class.java,

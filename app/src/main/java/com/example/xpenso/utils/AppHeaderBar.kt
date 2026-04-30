@@ -18,7 +18,7 @@ fun AppHeaderBar(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
+//                fontWeight = FontWeight.SemiBold
             )
         },
         navigationIcon = {

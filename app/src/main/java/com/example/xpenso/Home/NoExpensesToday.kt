@@ -71,7 +71,7 @@ fun NoExpensesToday(
                     scaleX = scale.value
                     scaleY = scale.value
                 },
-            tint = MaterialTheme.colorScheme.primary // Changed tint to match primary theme color
+            tint = MaterialTheme.colorScheme.primary.copy(.9f) // Changed tint to match primary theme color
         )
 
         Spacer(Modifier.height(16.dp))

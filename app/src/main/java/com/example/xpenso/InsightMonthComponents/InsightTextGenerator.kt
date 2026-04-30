@@ -96,7 +96,12 @@ fun generateSmartInsight(
     // Category fallback
     // ----------------------------
     val categoryTotals = thisMonthExpenses.groupBy {
-        ExpenseCategory.detect(it.title).name
+
+        (ExpenseCategory.entries
+            .find { cat -> cat.name == it.category }
+            ?: ExpenseCategory.OTHER
+                ).name
+
     }.mapValues { it.value.sumOf { e -> e.amount } }
 
     val topCategory = categoryTotals.maxByOrNull { it.value }

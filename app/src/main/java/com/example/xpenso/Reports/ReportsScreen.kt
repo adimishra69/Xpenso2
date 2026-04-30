@@ -23,23 +23,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.xpenso.AppStart.AnalyticsHelper
 import com.example.xpenso.Transaction.CustomRangeDialog
-import com.example.xpenso.Transaction.EndDatePickerDialog
-import com.example.xpenso.Transaction.StartDatePickerDialog
+import com.example.xpenso.Transaction.CustomDatePickerDialog
 import com.example.xpenso.utils.AppHeaderBar
 import android.content.Intent
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.core.content.FileProvider
+import com.example.xpenso.AddExpenses.CategoryBottomSheet
+import com.example.xpenso.Reports.YearPickerDialog
 import com.example.xpenso.Reports.ExportActionDialog
 import com.example.xpenso.ExpenseViewmodel.BackupRestoreState
 import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
 import com.example.xpenso.ExpenseViewmodel.ExportType
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.Transaction.ExpenseCategory
+import com.example.xpenso.utils.PremiumDatePickerDialog
+import kotlinx.coroutines.launch
 import java.io.File
+import java.util.Calendar
 
 private enum class ExportRequest {
-    MONTHLY, CATEGORY, JSON, PDF, CSV, CUSTOM
+    MONTHLY, CATEGORY, YEARLY, JSON, PDF, CSV, CUSTOM
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,17 +52,26 @@ fun ReportsScreen(
     currencySymbol: String,
     settingsStore: SettingsStore,
     expenseViewModel: ExpenseViewModel,
-    onMonthlyReport: () -> Unit,
+    onMonthlyReport: (Int, Int) -> Unit,
     onExportPdf: () -> Unit,
     onExportCsv: () -> Unit,
     onExportJson: () -> Unit,
+    onYearlyReport: (Int) -> Unit,
+    onCategoryReport: (ExpenseCategory?, Int, Int) -> Unit,
     onPremiumRequired: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val isPremium by settingsStore.isPremium.collectAsState(initial = false)
     val startOfMonth by settingsStore.startOfMonth.collectAsState(initial = 1)
+    val scope = rememberCoroutineScope()
+    var selectedCategoryYear by remember {
+        mutableStateOf(Calendar.getInstance().get(Calendar.YEAR))
+    }
 
+    var showMonthPicker by remember { mutableStateOf(false) }
+    var selectedCategoryMonth by remember { mutableStateOf(Calendar.getInstance().get(Calendar.MONTH)) }
+    var selectedMonth by remember { mutableStateOf(Calendar.getInstance().get(Calendar.MONTH) + 1) }
     // --- Choice Dialog States ---
     var showExportActionDialog by remember { mutableStateOf(false) }
     var pendingExportRequest by remember { mutableStateOf<ExportRequest?>(null) }
@@ -75,6 +88,11 @@ fun ReportsScreen(
     var selectedCategory by remember { mutableStateOf<ExpenseCategory?>(null) }
     var showCategoryDialog by remember { mutableStateOf(false) }
 
+    var showYearPicker by remember { mutableStateOf(false) }
+    var selectedYear by remember { mutableStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
+
+    var exportMonth by remember { mutableStateOf<Int?>(null) }
+    var exportYear by remember { mutableStateOf<Int?>(null) }
     // --- Save Launchers ---
     val customPdfSaveLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/pdf")
@@ -99,11 +117,25 @@ fun ReportsScreen(
                 uri = it,
                 startOfMonth = startOfMonth,
                 currencySymbol = currencySymbol,
-                category = selectedCategory
+                category = selectedCategory,
+                month = selectedCategoryMonth
             )
         }
     }
 
+    val yearlyPdfLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        uri?.let {
+            expenseViewModel.exportReport(
+                type = ExportType.YEARLY,
+                uri = it,
+                startOfMonth = startOfMonth,
+                currencySymbol = currencySymbol,
+                year = selectedYear
+            )
+        }
+    }
     LaunchedEffect(Unit) {
         AnalyticsHelper.trackScreen("Reports")
     }
@@ -158,18 +190,30 @@ fun ReportsScreen(
                 subtitle = "Comprehensive summary of your monthly cycle",
                 onClick = {
                     pendingExportRequest = ExportRequest.MONTHLY
-                    showExportActionDialog = true
+                    showMonthPicker = true
                 }
             )
 
+
+            ReportItem(
+                icon = Icons.Default.CalendarMonth,
+                title = "Yearly Financial Report",
+                subtitle = "Full year spending insights and analytics",
+               locked = !isPremium,
+                onClick = {
+                     if (!isPremium) onPremiumRequired()
+                    else {
+                        showYearPicker = true
+                     }
+                }
+            )
             ReportItem(
                 icon = Icons.Default.BarChart,
-                title = "Category Breakdown",
+                title = "Monthly Category Breakdown",
                 subtitle = "Export a report for a specific category",
-                locked = !isPremium,
                 onClick = {
-                    if (!isPremium) onPremiumRequired()
-                    else showCategoryDialog = true
+                    pendingExportRequest = ExportRequest.CATEGORY
+                    showCategoryDialog = true
                 }
             )
 
@@ -190,9 +234,13 @@ fun ReportsScreen(
                 icon = Icons.Default.PictureAsPdf,
                 title = "Export as PDF",
                 subtitle = "Clean, printable document of your records",
+                locked = !isPremium,
                 onClick = {
-                    pendingExportRequest = ExportRequest.PDF
-                    showExportActionDialog = true
+                    if (!isPremium) onPremiumRequired()
+                    else {
+                        pendingExportRequest = ExportRequest.PDF
+                        showExportActionDialog = true
+                    }
                 }
             )
 
@@ -235,49 +283,140 @@ fun ReportsScreen(
             onSave = {
                 showExportActionDialog = false
                 when (pendingExportRequest) {
-                    ExportRequest.MONTHLY -> onMonthlyReport()
+                    ExportRequest.MONTHLY ->
+                        onMonthlyReport(selectedCategoryMonth, selectedCategoryYear)
                     ExportRequest.JSON -> onExportJson()
                     ExportRequest.PDF -> onExportPdf()
                     ExportRequest.CSV -> onExportCsv()
-                    ExportRequest.CATEGORY -> categoryPdfLauncher.launch("${selectedCategory?.name?.lowercase()}_report.pdf")
+                    ExportRequest.CATEGORY ->
+                        onCategoryReport(selectedCategory, selectedCategoryMonth, selectedCategoryYear)
                     ExportRequest.CUSTOM -> customPdfSaveLauncher.launch("xpenso_custom_report_${System.currentTimeMillis()}.pdf")
+                    ExportRequest.YEARLY ->
+                        onYearlyReport(selectedYear)
                     else -> {}
                 }
             },
-                onShare = {
-                    showExportActionDialog = false
-                    pendingExportRequest?.let {
-                        pendingShareFile = shareReport(
-                            it,
-                            context,
-                            expenseViewModel,
-                            currencySymbol,
-                            selectedCategory,
-                            selectedCustomRange,
-                            startOfMonth
-                        )
-                    } // ⭐ Calls the helper above to share the report
+            onShare = {
+                showExportActionDialog = false
+
+                pendingExportRequest?.let { request ->
+
+                    scope.launch {
+
+                        val hasData: Boolean = when (request) {
+
+                            ExportRequest.MONTHLY ->
+                                expenseViewModel.hasDataForExport(
+                                    type = ExportType.MONTHLY,
+                                    month = selectedCategoryMonth,
+                                    year = selectedCategoryYear
+                                )
+
+                            ExportRequest.YEARLY ->
+                                expenseViewModel.hasDataForExport(
+                                    type = ExportType.YEARLY,
+                                    year = selectedYear
+                                )
+
+                            ExportRequest.CATEGORY ->
+                                expenseViewModel.hasDataForExport(
+                                    type = ExportType.CATEGORY,
+                                    category = selectedCategory,
+                                    month = selectedCategoryMonth,
+                                    year = selectedCategoryYear
+                                )
+
+                            else -> expenseViewModel.hasAnyData()
+                        }
+
+                        if (hasData) {
+                            pendingShareFile = shareReport(
+                                request,
+                                context,
+                                expenseViewModel,
+                                currencySymbol,
+                                selectedCategory,
+                                selectedCustomRange,
+                                startOfMonth,
+                                selectedYear,
+                                selectedCategoryMonth,
+                                selectedCategoryYear
+                            )
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "No transactions found for selected period", // 👈 SAME AS SAVE
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
             }
         )
     }
 
     // --- Category Dialog ---
     if (showCategoryDialog) {
-        CategoryReportDialog(
-            categories = ExpenseCategory.entries,
-            onDismiss = { showCategoryDialog = false },
-            onCategorySelected = { category ->
+        CategoryBottomSheet(
+            currentSelection = selectedCategory,
+            isVertical = true,
+            onSelect = { category ->
+
                 showCategoryDialog = false
-                val hasCategoryData = expenseViewModel.allExpenses.value.any { ExpenseCategory.detect(it.title) == category }
+
+                val hasCategoryData = expenseViewModel.allExpenses.value
+                    .any {
+                        (ExpenseCategory.entries
+                            .find { cat -> cat.name == it.category }
+                            ?: ExpenseCategory.OTHER
+                                ) == category
+                    }
+
                 if (hasCategoryData) {
                     selectedCategory = category
-                    pendingExportRequest = ExportRequest.CATEGORY
-                    showExportActionDialog = true
+                    showMonthPicker = true
                 } else {
-                    Toast.makeText(context, "No transactions recorded for ${category.name.lowercase().replace("_"," ")}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "No transactions recorded for ${
+                            category.name.lowercase().replace("_"," ")
+                        }",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
+            },
+            onDismiss = { showCategoryDialog = false }
+        )
+    }
+    if (showMonthPicker) {
+        MonthPickerDialog(
+            selectedMonth = selectedCategoryMonth,
+            selectedYear = selectedCategoryYear,
+            onDismiss = { showMonthPicker = false },
+            onMonthSelected = { month, year ->
+
+                selectedCategoryMonth = month
+                selectedCategoryYear = year
+
+                showMonthPicker = false
+                showExportActionDialog = true
             }
         )
+    }
+
+
+    if (showYearPicker) {
+        YearPickerDialog(
+            selectedYear  = selectedYear,
+            onDismiss     = { showYearPicker = false },
+            onSelected    = {  year ->
+                selectedYear  = year
+                showYearPicker = false
+                pendingExportRequest = ExportRequest.YEARLY
+                showExportActionDialog = true
+            }
+        )
+
     }
 
     // --- Custom Range Dialog ---
@@ -295,7 +434,7 @@ fun ReportsScreen(
                         pendingExportRequest = ExportRequest.CUSTOM
                         showExportActionDialog = true
                     } else {
-                        Toast.makeText(context, "No transactions in selected range", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "No transactions in selected period", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
@@ -305,7 +444,8 @@ fun ReportsScreen(
 
     // --- Sub Date Pickers ---
     if (showStartDatePicker) {
-        StartDatePickerDialog(
+        PremiumDatePickerDialog(
+            initialSelectedMillis = startDate ?: System.currentTimeMillis(),
             onDateSelected = {
                 startDate = it
                 showStartDatePicker = false
@@ -315,7 +455,8 @@ fun ReportsScreen(
     }
 
     if (showEndDatePicker) {
-        EndDatePickerDialog(
+        PremiumDatePickerDialog(
+            initialSelectedMillis = endDate ?: System.currentTimeMillis(),
             onDateSelected = {
                 endDate = it
                 showEndDatePicker = false
@@ -333,26 +474,26 @@ fun ReportItem(icon: ImageVector,
                onClick: () -> Unit
 ){
     val haptic = LocalHapticFeedback.current // ✅ ADD THIS
-    Card(
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = if (locked) 0.dp else 2.dp,
         onClick = {
             if (locked) {
-                // 🔥 PREMIUM FEEDBACK
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             }
-            onClick() // still call (to show premium sheet)
-        },
-
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor =
-            if (locked) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-         )
+            onClick()
+        }
     ) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(modifier = Modifier.size(48.dp),
+            Surface(
+                modifier = Modifier.size(48.dp),
                 shape = RoundedCornerShape(14.dp),
-                color = if (locked) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                color = if (locked)
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                else
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, null,
@@ -391,6 +532,16 @@ fun SectionHeader(title: String) {
         modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
 }
 
+fun fileSafeDateTime(
+    millis: Long = System.currentTimeMillis()
+): String {
+    val format = java.text.SimpleDateFormat(
+        "ddMMyy_HHmmss",
+        java.util.Locale.getDefault()
+    )
+
+    return format.format(java.util.Date(millis))
+}
 private fun shareReport(
     request: ExportRequest,
     context: Context,
@@ -398,7 +549,10 @@ private fun shareReport(
     currencySymbol: String,
     selectedCategory: ExpenseCategory?,
     selectedCustomRange: Pair<Long, Long>?,
-    startOfMonth: Int
+    startOfMonth: Int,
+    selectedYear: Int,
+    selectedCategoryMonth: Int,
+    selectedCategoryYear: Int
 ): File? {
 
     val cacheDir = context.cacheDir
@@ -407,7 +561,10 @@ private fun shareReport(
     when (request) {
 
         ExportRequest.JSON -> {
-            file = File(cacheDir, "xpenso_backup.json")
+            file = File(
+                cacheDir,
+                "Xpenso_Backup_${fileSafeDateTime()}.json"
+            )
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
             expenseViewModel.exportReport(
@@ -419,7 +576,7 @@ private fun shareReport(
         }
 
         ExportRequest.PDF -> {
-            file = File(cacheDir, "xpenso_report.pdf")
+            file = File(cacheDir, "Xpenso_Report_${fileSafeDateTime()}.pdf")
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
             expenseViewModel.exportReport(
@@ -431,7 +588,7 @@ private fun shareReport(
         }
 
         ExportRequest.CSV -> {
-            file = File(cacheDir, "xpenso_report.csv")
+            file = File(cacheDir, "Xpenso_Transactions_${fileSafeDateTime()}.csv")
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
             expenseViewModel.exportReport(
@@ -443,36 +600,70 @@ private fun shareReport(
         }
 
         ExportRequest.MONTHLY -> {
-            file = File(cacheDir, "xpenso_monthly_report.pdf")
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            file = File(cacheDir, "xpenso_monthly_report_${
+                fileSafeDateTime()}.pdf")
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
 
             expenseViewModel.exportReport(
                 type = ExportType.MONTHLY,
                 uri = uri,
                 startOfMonth = startOfMonth,
-                currencySymbol = currencySymbol
+                currencySymbol = currencySymbol,
+                month = selectedCategoryMonth,
+                year = selectedCategoryYear
+            )
+        }
+
+        ExportRequest.YEARLY -> {
+            file = File(cacheDir, "xpenso_yearly_report${
+                fileSafeDateTime()}.pdf")
+
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
+            expenseViewModel.exportReport(
+                type = ExportType.YEARLY,
+                uri = uri,
+                startOfMonth = startOfMonth,
+                currencySymbol = currencySymbol,
+                year = selectedYear,
             )
         }
 
         ExportRequest.CATEGORY -> {
             if (selectedCategory == null) return null
 
-            file = File(cacheDir, "xpenso_category_report.pdf")
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            file = File(cacheDir, "xpenso_category_report${
+                fileSafeDateTime()}.pdf")
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
 
             expenseViewModel.exportReport(
                 type = ExportType.CATEGORY,
                 uri = uri,
                 startOfMonth = startOfMonth,
                 currencySymbol = currencySymbol,
-                category = selectedCategory
+                category = selectedCategory,
+                year = selectedCategoryYear,
+                month = selectedCategoryMonth
             )
         }
 
         ExportRequest.CUSTOM -> {
             if (selectedCustomRange == null) return null
 
-            file = File(cacheDir, "xpenso_custom_report.pdf")
+            file = File(cacheDir, "xpenso_custom_report${
+                fileSafeDateTime()}.pdf")
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
             expenseViewModel.exportReport(

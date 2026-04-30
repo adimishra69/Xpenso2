@@ -1,14 +1,11 @@
 package com.example.xpenso.Transaction
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.xpenso.Transaction.FullScreenTransactionShimmer
 import com.example.xpenso.AppStart.AnalyticsHelper
 import java.text.SimpleDateFormat
 import java.util.*
@@ -39,6 +35,8 @@ import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
 import com.example.xpenso.PremiumHandler.PremiumFeatureSheet
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.utils.AppTopBar
+import com.example.xpenso.utils.PremiumDatePickerDialog
+import kotlinx.coroutines.delay
 
 enum class TransactionFilter(val label: String) {
     ALL("All"),
@@ -55,17 +53,14 @@ fun TransactionScreen(
     settingsStore: SettingsStore,
     initialFilter: TransactionFilter = TransactionFilter.ALL,
     initialSearch: String = "",
-    onNavigateToPremium: () -> Unit,
+//    onNavigateToPremium: () -> Unit,
     initialStartDate: Long? = null, // Add this
     initialEndDate: Long? = null,
     isFromInsights: Boolean = false// Add this
 ) {
     val allExpenses by expenseViewModel.allExpenses.collectAsState(initial = null)
     val startOfMonth by settingsStore.startOfMonth.collectAsState(initial = 1)
-   val isPremium by settingsStore.isPremium.collectAsState(initial = false)
-
-//    var filterMode by remember { mutableStateOf(initialFilter) }
-//    var searchQuery by remember { mutableStateOf(initialSearch) }
+//    val isPremium by settingsStore.isPremium.collectAsState(initial = false)
 
     var filterMode by remember { mutableStateOf(TransactionFilter.ALL) }
     var searchQuery by remember { mutableStateOf("") }
@@ -86,9 +81,9 @@ fun TransactionScreen(
     var showSearch by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 //    var isLoading by remember { mutableStateOf(true) }
-    var showPremiumSheet by remember { mutableStateOf(false) }
+//    var showPremiumSheet by remember { mutableStateOf(false) }
 
-    val haptic = LocalHapticFeedback.current
+//    val haptic = LocalHapticFeedback.current
 
 
     val isKeyboardOpen =
@@ -98,17 +93,14 @@ fun TransactionScreen(
             focusManager.clearFocus()
         }
     }
-    var isMinTimeDone by remember { mutableStateOf(false) }
+    var isMinTimeDone by remember { mutableStateOf(true) }
     val isScreenLoading = (allExpenses == null) || !isMinTimeDone
     /* ---------------- FILTER BY DATE ---------------- */
     LaunchedEffect(Unit) {
         AnalyticsHelper.trackScreen("Transactions")
     }
 
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(200L) // 🔥 1 second minimum
-        isMinTimeDone = true
-    }
+
     var isFirstLoad by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
@@ -118,8 +110,6 @@ fun TransactionScreen(
                 // 🔥 Apply Insights state
                 filterMode = initialFilter
                 searchQuery = initialSearch
-
-
 
             } else {
                 // 🔥 Normal open → reset everything
@@ -132,23 +122,6 @@ fun TransactionScreen(
             isFirstLoad = false
         }
     }
-//    LaunchedEffect(allExpenses) {
-//        if (allExpenses == null) {
-//            isLoading = true
-//        } else {
-//            val start = System.currentTimeMillis()
-//
-//            val minDuration = 300L
-//            val elapsed = System.currentTimeMillis() - start
-//            val remaining = (minDuration - elapsed).coerceAtLeast(0)
-//
-//            kotlinx.coroutines.delay(remaining)
-//
-//            isLoading = false
-//        }
-//    }
-
-    var isFocused by remember { mutableStateOf(false) }
 
     val dateFilteredList = remember(
         allExpenses,
@@ -158,8 +131,6 @@ fun TransactionScreen(
         customEndDate
     ) {
         val list = allExpenses ?: emptyList()
-        val calendar = Calendar.getInstance()
-        val now = calendar.timeInMillis
 
         when (filterMode) {
 
@@ -247,12 +218,24 @@ fun TransactionScreen(
 
             dateFilteredList.filter { expense ->
 
-                val category = ExpenseCategory.detect(expense.title)
+                val category =
+                    ExpenseCategory.entries
+                        .find { it.name == expense.category }
+                        ?: ExpenseCategory.OTHER
 
-                expense.title.lowercase().contains(query) ||
+                val matchesNormalSearch =  expense.title.lowercase().contains(query) ||
                         expense.paymentMode.lowercase().contains(query) ||
-                        expense.amount.toString().contains(query) ||
-                        category.name.lowercase().contains(query)
+                        expense.amount.toString().contains(query)
+
+                val normalizedQuery = normalize(searchQuery)
+                val normalizedCategory = normalize(category.name)
+
+                if (isFromInsights) {
+                    matchesNormalSearch ||
+                            normalizedCategory.contains(normalizedQuery)
+                } else {
+                    matchesNormalSearch
+                }
             }
         }
     }
@@ -268,7 +251,8 @@ fun TransactionScreen(
                         actions = {
                             IconButton(onClick = { showSearch = !showSearch }) {
                                 Icon(
-                                    imageVector = if (showSearch) Icons.Default.Close else Icons.Default.Search,
+                                    imageVector = if (showSearch) Icons.Default.Close
+                                                  else Icons.Default.Search,
                                     contentDescription = "Toggle Search"
                                 )
                             }
@@ -289,12 +273,12 @@ fun TransactionScreen(
                                 onClick = {
 
                                     // 🔒 Block Custom Range for free users
-                                    if (mode == TransactionFilter.CUSTOM && !isPremium) {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        // Navigate to premium screen instead
-                                        showPremiumSheet = true
-                                        return@Tab
-                                    }
+//                                    if (mode == TransactionFilter.CUSTOM && !isPremium) {
+//                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+//                                        // Navigate to premium screen instead
+//                                        showPremiumSheet = true
+//                                        return@Tab
+//                                    }
 
                                     if (mode != TransactionFilter.CUSTOM) {
                                         customStartDate = null
@@ -313,9 +297,9 @@ fun TransactionScreen(
                                 },
                                 text = {
 
-                                    val isLocked = mode == TransactionFilter.CUSTOM && !isPremium
+//                                    val isLocked = mode == TransactionFilter.CUSTOM && !isPremium
 
-                                    val contentAlpha = if (isLocked) 0.4f else 1f
+                                    val contentAlpha =  1f
 
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -369,7 +353,12 @@ fun TransactionScreen(
                             trailingIcon = {
                                 if (searchQuery.isNotEmpty()) {
                                     IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Default.Close, "Clear")
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear",
+                                            modifier = Modifier.size(18.dp), // 🔻 smaller size
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) // 🔻 lighter color
+                                        )
                                     }
                                 }
                             },
@@ -380,9 +369,9 @@ fun TransactionScreen(
                             )
                         )
                     }
-                    }
-
-          }     }
+                }
+                        }
+                }
         }
     ) { padding ->
 
@@ -395,12 +384,8 @@ fun TransactionScreen(
 
                     if (isScreenLoading) {
                            FullScreenTransactionShimmer()
-                        // 🔥 Do NOTHING or minimal placeholder
-//                        Box(
-//                            modifier = Modifier.fillMaxSize()
-//                        )
-
                     }
+
                     else if (finalList.isEmpty()) {
                         Box(
                             Modifier.fillMaxSize(),
@@ -469,8 +454,17 @@ fun TransactionScreen(
             onApply = {
 
                 if (tempStartDate != null && tempEndDate != null) {
+
+                    val calendar = Calendar.getInstance().apply {
+                        timeInMillis = tempEndDate!!
+                        set(Calendar.HOUR_OF_DAY, 23)
+                        set(Calendar.MINUTE, 59)
+                        set(Calendar.SECOND, 59)
+                        set(Calendar.MILLISECOND, 999)
+                    }
+
                     customStartDate = tempStartDate
-                    customEndDate = tempEndDate
+                    customEndDate = calendar.timeInMillis
                     filterMode = TransactionFilter.CUSTOM
                 }
 
@@ -485,50 +479,54 @@ fun TransactionScreen(
 
     if (showStartDatePicker) {
 
-        StartDatePickerDialog(
-
+        PremiumDatePickerDialog(
+            initialSelectedMillis = tempStartDate ?: System.currentTimeMillis(),
             onDateSelected = {
                 tempStartDate = it
-                showStartDatePicker = false
             },
-
             onDismiss = {
                 showStartDatePicker = false
             }
-
         )
 
     }
 
     if (showEndDatePicker) {
 
-        EndDatePickerDialog(
-
+        PremiumDatePickerDialog(
+            initialSelectedMillis = tempEndDate ?: System.currentTimeMillis(),
             onDateSelected = {
                 tempEndDate = it
-                showEndDatePicker = false
+//                showEndDatePicker = false
             },
 
             onDismiss = {
                 showEndDatePicker = false
             }
-
         )
 
     }
-    if (showPremiumSheet) {
-        PremiumFeatureSheet(
-            message = "Custom date filtering is available in Xpenso Premium",
-            onDismiss = { showPremiumSheet = false },
-            onUpgradeClick = {
-                showPremiumSheet = false
-                onNavigateToPremium()
-            }
-        )
-    }
+//    if (showPremiumSheet) {
+//        PremiumFeatureSheet(
+//            message = "Custom date filtering is available in Xpenso Premium",
+//            onDismiss = { showPremiumSheet = false },
+//            onUpgradeClick = {
+//                showPremiumSheet = false
+//                onNavigateToPremium()
+//            }
+//        )
+//    }
 }
 
 /* ---------------- HELPERS ---------------- */
+
+fun normalize(text: String): String {
+    return text
+        .lowercase()
+        .replace("_", "")
+        .replace(" ", "")
+        .replace("-", "")
+}
 
 private fun isSameDay(t1: Long, t2: Long): Boolean {
     val cal1 = Calendar.getInstance().apply { timeInMillis = t1 }

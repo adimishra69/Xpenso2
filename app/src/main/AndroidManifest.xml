@@ -53,7 +53,8 @@
             android:name=".AppStart.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Xpenso">
+            android:theme="@style/Theme.Xpenso"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

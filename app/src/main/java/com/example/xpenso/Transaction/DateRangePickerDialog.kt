@@ -24,6 +24,8 @@ fun CustomRangeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+
 
         confirmButton = {
             Button(

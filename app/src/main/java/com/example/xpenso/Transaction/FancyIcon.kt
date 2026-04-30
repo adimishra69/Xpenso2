@@ -1,18 +1,111 @@
 package com.example.xpenso.Transaction
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import com.example.xpenso.R
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.LocalGroceryStore
+import androidx.compose.material.icons.outlined.LocalPharmacy
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Movie
+import androidx.compose.material.icons.outlined.OtherHouses
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material.icons.outlined.Spa
+import androidx.compose.material.icons.outlined.Subscriptions
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 enum class ExpenseCategory(
-    val icon: ImageVector,
+    val icon: ImageVector? = null,
     val color: Color,
-    val keywords: List<String>
+    val keywords: List<String>,
+    val drawable: Int? = null
 ) {
+    PERSONAL_CARE(
+        Icons.Outlined.Spa,
+        Color(0xFFCE93D8),
+        listOf(
+
+            // core
+            "personal care", "self care", "grooming", "self grooming", "personal hygiene",
+
+            // hair
+            "haircut", "hair cut", "haircutting", "hair cutting",
+            "salon", "saloon", "barber", "barbershop",
+            "hair spa", "hair treatment", "hair styling",
+            "hair color", "hair dye", "hair trim",
+            "beard trim", "beard", "shave", "trimming",
+
+            // skincare
+            "skincare", "skin care",
+            "facial", "cleanup", "makeover",
+            "face wash", "cleanser",
+            "face cream", "beauty cream",
+            "face pack", "face mask",
+            "face toner", "face serum",
+            "moisturizer", "lotion", "body lotion", "skin lotion",
+            "sunscreen", "spf",
+
+            // beauty / cosmetics
+            "beauty", "makeup", "make up",
+            "cosmetic", "cosmetics",
+            "lipstick", "lip balm", "lip gloss", "lip tint", "lip liner",
+            "foundation", "foundation cream",
+            "compact", "compact powder",
+            "concealer", "blush", "highlighter",
+            "eyeliner", "kajal", "mascara",
+            "eyeshadow", "eye shadow",
+            "nail polish", "nail paint",
+
+            // hygiene
+            "toothpaste", "toothbrush",
+            "soap", "body wash",
+            "shampoo", "shampoo bottle",
+            "conditioner", "conditioner bottle",
+            "hair oil", "hair oil bottle",
+            "deodorant", "perfume", "fragrance",
+            "ittar", "itra", "attar",
+
+            // hair products
+            "hair gel", "hair cream", "hair serum",
+            "hair spray", "hair wax", "wax", "gel",
+
+            // services
+            "spa", "massage",
+            "parlor", "beauty parlor",
+
+            // tools
+            "trimmer", "razor", "nail cutter",
+
+            // added (real-world missing)
+            "bleach", "waxing", "threading",
+            "pedicure", "manicure",
+            "body spa", "head massage"
+        )
+    ),
+
     SHOPPING(
-        Icons.Default.ShoppingBag,
-        Color(0xFFF06292),
+        Icons.Outlined.ShoppingBag,
+        Color(0xFFEC407A), // Vivid rose — fashion, retail, lifestyle
         listOf(
             "shopping",
             "shop",
@@ -27,19 +120,17 @@ enum class ExpenseCategory(
             "jacket", "coat", "hoodie", "sweater", "blazer",
             "night dress", "innerwear", "underwear", "bra", "vest",
             "mall", "shopping mall", "cloth",
-            "fabric", "cloth shop", "boutique",
-            "darji", "silai",
-            "shopping",
-            "shop",
+            "fabric", "cloth shop", "darji", "silai",
+            "shopping", "shop",
 
-            "gift", "present",
-            "birthday gift",
-            "anniversary gift",
-            "wedding gift",
-            "gift purchase",
-            "gift item",
-            "return gift",
-            "surprise gift",
+//            "gift", "present",
+//            "birthday gift",
+//            "anniversary gift",
+//            "wedding gift",
+//            "gift purchase",
+//            "gift item",
+//            "return gift",
+//            "surprise gift",
 
             "gold", "silver",
             "jewellery", "jewelry",
@@ -111,14 +202,14 @@ enum class ExpenseCategory(
             "ajio order", "meesho order", "nykaa order",
             "shopping mall", "mall shopping", "retail store",
 
-    // Hair & grooming
-    "haircut", "hair cut", "salon",
-    "haircutting", "hair cutting", "trim",
-    "beard trim", "saloon", "spa",
-    "barber", "barbershop", "hairdressing",
-    "hair styling", "hair treatment",
-    "hair spa", "hair trim",
-    "beard", "shave",
+            // Hair & grooming
+//            "haircut", "hair cut", "salon",
+//            "haircutting", "hair cutting", "trim",
+//            "beard trim", "saloon", "spa",
+//            "barber", "barbershop", "hairdressing",
+//            "hair styling", "hair treatment",
+//            "hair spa", "hair trim",
+//            "beard", "shave",
 
             "candle", "church candle",
             "prayer candle",
@@ -130,67 +221,12 @@ enum class ExpenseCategory(
             "church donation",
             "christmas candle",
             "nativity set",
-
-    // Bath & hygiene
-    "soap", "handwash", "body wash",
-    "loofah", "toothpaste", "toothpaste tube",
-    "toothbrush", "tooth brush", "hairbrush",
-    "hair brush", "beard brush",
-    "mouthwash", "razor",
-    "shaving cream", "aftershave",
-    "comb", "brush",
-
-    // Hair products
-    "shampoo", "shampoo bottle",
-    "conditioner", "conditioner bottle",
-    "hair oil", "hair oil bottle",
-    "hair gel", "hair cream",
-    "hair serum", "hair spray",
-    "hair wax", "hair color",
-    "hair dye",
-
-    // Skincare
-    "face wash", "cleanser",
-    "face cream", "beauty cream",
-    "face pack", "face mask",
-    "face toner", "face serum",
-    "moisturizer", "lotion",
-    "body lotion", "skin lotion",
-    "sunscreen", "spf",
-
-    // Makeup / cosmetics
-    "cosmetic", "cosmetics",
-    "makeup", "make up",
-    "lipstick", "lip balm",
-    "lip gloss", "lip tint",
-    "lip liner",
-    "foundation", "foundation cream",
-    "compact", "compact powder",
-    "concealer", "blush",
-    "highlighter",
-    "eyeliner", "kajal",
-    "mascara",
-    "eyeshadow", "eye shadow",
-    "nail polish", "nail paint",
-
-    // Fragrance
-    "perfume", "fragrance",
-    "deodorant","ittar" , "itra" , "Attar"
-            , "hair serum", "wax", "gel",
-
-    // Beauty services
-    "facial", "grooming",
-    "beauty", "skincare",
-    "skin care", "makeover",
-
-    // Small grooming tools
-    "trimmer", "nail cutter"
         )
     ),
 
     BILLS(
-        Icons.Default.RequestQuote,
-        Color(0xFFFFB300),
+        Icons.Outlined.Receipt,        // Receipt icon — more fitting than RequestQuote for bills
+        Color(0xFFFFA000),            // Warm amber — utility, attention, invoices
         listOf(
             "bill", "bills",
             "electricity", "power bill",
@@ -217,7 +253,7 @@ enum class ExpenseCategory(
             "atm charge", "atm fee",
             "transfer fee", "processing fee",
             "interest", "bank interest" , "Redeem code" ,
-            "bank penalty", "late fee",
+            "bank penalty", "late fee", "money",
             "loan emi", "credit card bill",
             "credit card payment" ,
             "gas", "gas bill", "gas cylinder",
@@ -230,8 +266,8 @@ enum class ExpenseCategory(
     ),
 
     EDUCATION(
-        Icons.Default.School,
-        Color(0xFF3949AB),
+        Icons.Outlined.School,       // Open book — more academic than School building
+        Color(0xFF283593),            // Deep indigo — trust, knowledge, academia
         listOf(
             "school", "college", "fees", "tuition",
             "coaching", "course", "books", "university", "education",
@@ -242,20 +278,54 @@ enum class ExpenseCategory(
             "coaching fee", "tuition fee", "study books" , "paper", "notebook", "copy", "copies", "copy book", "copy books",
             "register", "note book", "exercise book",
             "pen", "pencil", "eraser", "sharpener",
-            "stationery", "stationary",
-            "print", "printing", "printout",
+            "stationery", "stationary", "exam",
+            "print", "printing", "printout", "graduation",
             "xerox", "photocopy", "copy print",
             "spiral binding", "binding" , "spiral",
             "daycare", "playschool", "nursery",
-            "school fees", "tuition",
+            "school fees", "tuition", "udemy" ,
             "udemy subscription", "coursera", "byju", "unacademy", "vedantu",
-            "physics wallah"
+            "physics wallah" , "project" , "file"
         )
 
     ),
+
+    SUBSCRIPTIONS(
+        Icons.Outlined.Subscriptions,         // Repeat/cycle — captures recurring better than Subscriptions
+        Color(0xFF00ACC1),            // Deep teal-cyan — digital, streaming, modern
+        listOf(
+            // 🎬 Streaming platforms
+            "netflix", "prime", "prime video", "amazon prime", "jio hotstar",
+            "hotstar", "disney hotstar", "sonyliv", "sony liv",
+            "zee5", "voot", "jiocinema", "mx player", "youtube", "music",
+
+            // 🎵 Music
+            "spotify", "apple music", "youtube music", "gaana", "wynk",
+
+            // 📺 Video / Premium
+            "youtube premium",
+
+            // ☁️ Cloud / storage
+            "google one", "icloud", "dropbox", "onedrive",
+
+            // 💻 Software / tools
+            "windows", "microsoft 365", "office 365",
+            "adobe", "adobe cc", "photoshop subscription",
+            "canva pro", "notion", "chatgpt", "openai","claude","gemini",
+
+            // 🎮 Gaming
+            "xbox game pass", "game pass", "playstation plus", "ps plus",
+
+
+            // 📰 News / others
+            "subscription", "monthly subscription", "annual subscription",
+            "auto debit", "autopay", "recurring payment"
+        )
+    ),
+
     ELECTRONICS(
-        Icons.Default.Devices,
-        Color(0xFF5E35B1),
+        Icons.Outlined.Devices,
+        Color(0xFF42A5F5),            // Soft violet — tech, innovation, digital
         listOf(
             "electronics", "electronic",
 
@@ -272,7 +342,7 @@ enum class ExpenseCategory(
             "geyser", "water heater",
             "fan", "ceiling fan", "table fan",
             "heater", "room heater",
-            "air cooler", "cooler",
+            "air cooler", "cooler", "chip",
             "ac", "air conditioner", "immersion rod", "electric heater", "room heater",
             "electric iron", "steam iron", "toaster",
             "electric kettle", "blender", "hand blender",
@@ -342,17 +412,79 @@ enum class ExpenseCategory(
             "power strip",
             "electric board",
             "led light" , "apple", "samsung", "realme",
-            "redmi", "xiaomi", "oneplus", "techno" , "Xiaomi" , "Asus Laptop" , "macbook",  "samsung Laptop",
+            "redmi", "xiaomi", "oneplus", "techno" , "Xiaomi" ,
+            "asus" , "macbook",  "samsung",
             "boat", "jbl", "sony", "boult" ,
-            "hp laptop", "dell laptop", "lenovo laptop"
+            "hp", "dell", "lenovo"
 
 
         )
     ),
 
+    ENTERTAINMENT(
+        Icons.Outlined.Movie,
+        Color(0xFF8E24AA), // Deep Purple — entertainment, fun, leisure (not used in your list)
+        listOf(
+
+            // 🎬 Movies & Cinema
+            "movie", "movies", "cinema", "theatre", "theater",
+            "movie ticket", "cinema ticket",
+            "film", "film ticket", "show", "show ticket",
+            "imax", "multiplex", "pvr", "inox", "cinepolis",
+
+            // 🍿 Movie snacks / combos
+            "popcorn", "nachos", "movie snack",
+            "cinema food", "theatre food",
+
+            // 🎮 Gaming
+            "game", "gaming", "video game",
+            "arcade", "gaming zone", "game zone",
+            "playstation", "ps", "xbox gaming",
+            "pc gaming", "gaming cafe",
+
+            // 🎡 Fun & Outing
+            "outing", "hangout", "hang out",
+            "fun", "fun day", "fun trip",
+            "picnic", "outing trip",
+            "amusement", "amusement park",
+            "water park", "theme park",
+            "fun world", "adventure park",
+
+            // 🎤 Events
+            "event", "events",
+            "concert", "music concert",
+            "show", "live show",
+            "exhibition", "fair",
+            "festival", "carnival",
+            "standup", "standup comedy",
+            "comedy show",
+
+            // 🎳 Indoor Activities
+            "bowling", "bowling alley",
+            "snooker", "pool", "billiards",
+            "trampoline park",
+            "laser tag", "escape room",
+
+            // 🎪 Kids entertainment
+            "kids play", "play area",
+            "kids zone", "toy train",
+            "fun zone", "play zone",
+
+            // 🎟️ Tickets
+            "ticket", "entry ticket",
+            "entry fee", "entry charge",
+            "pass", "event pass",
+
+            // 🧾 Generic entertainment words
+            "entertainment", "leisure",
+            "recreation", "fun activity",
+            "timepass", "time pass"
+        )
+    ),
+
     FOOD(
-        Icons.Default.Restaurant,
-        Color(0xFFF57C00),
+        Icons.Outlined.Restaurant,    // Ramen bowl — more expressive and appetising
+        Color(0xFFFF7043),            // Deep orange-red — appetite, warmth, street food energy
         listOf(
             "food", "dinner", "lunch", "breakfast", "pizza", "biscuit", "snacks", "burger",
             "meal", "thali", "restaurant",
@@ -373,14 +505,14 @@ enum class ExpenseCategory(
             "lunch box", "tiffin" , "dominos", "pizza hut", "kfc",
             "burger king", "subway", "mcdonalds", "naturals" , "ice cream",
             "haldiram", "bikanervala", "wow momo", "water ball" , "pani puri" ,
-            "zomato", "swiggy", "food delivery",
+            "zomato", "swiggy", "food delivery", "khana",
             "tea stall", "chai stall", "dhaba" , // 🥤 Cold drinks / beverages
             "coke", "coca cola", "pepsi", "sprite", "fanta", "thums up", "limca",
-            "soft drink", "cold drink", "soda", "aerated drink",
+            "soft drink", "cold drink", "soda", "aerated drink", "campa", "supper",
 
 // 🧃 Juices
             "juice", "fruit juice", "real juice", "tropicana", "minute maid",
-            "mixed juice", "fresh juice", "packed juice",
+            "mixed juice", "fresh juice", "packed juice", "coconut",
 
 // ⚡ Energy / sports drinks
             "red bull", "monster", "sting", "energy drink", "gatorade", "sports drink",
@@ -390,20 +522,60 @@ enum class ExpenseCategory(
             "lassi", "sweet lassi", "salted lassi",
             "buttermilk", "chaas",
             "flavoured milk", "flavored milk", "chocolate milk",
-
+ "water",
 // 🇮🇳 Indian drinks
             "nimbu pani", "lemon water", "lemon soda",
             "jaljeera", "aam panna", "sugarcane juice", "ganne ka juice",
+            "kinley", "aquafina", "bottle", "water can", "bisleri",
 
 // 🍹 Generic drink terms
-            "drink", "beverage", "cool drink", "refreshment"
+            "drink", "beverage", "cool drink", "refreshment" , "wafer"
         )
     ),
 
+    SOCIAL(
+        Icons.Outlined.Groups,
+        Color(0xFF9B2C3D), // Deep Maroon (rich, premium)
+        listOf(
+            // core
+            "gift", "gifts", "present", "presents",
+
+            // occasions
+            "birthday gift", "bday gift",
+            "anniversary gift",
+            "wedding gift", "wedding",
+            "marriage gift", "marriage",
+            "engagement gift", "engagement",
+            "festival gift", "festival", "friends",
+
+            // Indian context (important)
+            "shagun", "shagun diya", "shagun diya",
+            "lifafa", "envelope gift",
+            "cash gift", "gift envelope",
+
+            // return / social
+            "return gift", "party return gift",
+            "function gift", "family function",
+            "ceremony gift", "occasion gift", "envelope",
+
+            // items commonly used as gifts
+            "bouquet", "flower bouquet", "flowers gift",
+            "chocolate gift", "gift box",
+            "hamper", "gift hamper",
+            "combo gift", "surprise gift",
+
+            // verbs / actions
+            "gifted", "gave gift", "given gift",
+            "bought gift", "buy gift",
+
+            // common typos / variations
+            "gif", "gft", "presnt", "giftt"
+        )
+    ),
 
     GROCERY(
-        Icons.Default.ShoppingCart,
-        Color(0xFF2E7D32),
+        Icons.Outlined.LocalGroceryStore, // Cart with store feel — more specific than ShoppingCart
+        Color(0xFF388E3C),               // Forest green — fresh, natural, produce
         listOf(
             "grocery", "groceries",
 
@@ -483,8 +655,8 @@ enum class ExpenseCategory(
             "gift purchase",
             "gift item",
             "return gift", "bread", "egg", "eggs", "biscuit", "biscuits",
-            "maggi", "noodles", "pasta", "sauce",
-
+            "maggi", "noodles", "pasta", "sauce", "water bottle",
+            "drinking water", "clarified Butter",
 
             "spices", "masala", "jeera", "haldi",
             "tasbeeh", "tasbih",
@@ -541,14 +713,14 @@ enum class ExpenseCategory(
             "hit spray", "baygon", "mosquito coil",
             "tata salt", "aashirvaad atta", "fortune oil",
             "mdh masala", "everest masala", "catch masala",
-            "amul milk", "mother dairy", "nandini milk"
+            "amul milk", "mother dairy", "nandini milk" , "milling"
         )
     ),
 
     INVESTMENT(
-        Icons.Default.TrendingUp,
-        Color(0xFF0D47A1),
-        listOf(
+//        null,
+        color = Color(0xFF1565C0),
+        keywords =listOf(
             "investment", "invest", "sip",
             "mutual fund", "mutualfund",
             "stock", "stocks", "share", "shares",
@@ -559,19 +731,22 @@ enum class ExpenseCategory(
             "gold etf", "etf", "grow",
             "zerodha", "groww", "upstox",
             "angel one", "angelone"
-        )
+        ),
+        drawable = R.drawable.saving_money_flower
     ),
 
 
     HOUSING(
-        Icons.Default.HomeWork,
-        Color(0xFF6D4C41), // neutral blue-grey
+        Icons.Default.OtherHouses,
+//         Icons.Default.Home,
+// House with character — warmer than HomeWork
+        Color(0xFF8D6E63),            // Warm taupe — home, comfort, earthiness
         listOf(
             "rent", "house rent", "room rent",
             "monthly rent", "flat rent",
             "pg rent", "pg", "Housing",
             "hostel rent", "hostel",
-            "lease", "tenancy",
+            "lease", "tenancy","mob", "rent agreement",
             "advance rent", "security deposit",
             "owner rent", "flat charge", "house charge",
             "maintenance", "society maintenance",
@@ -589,135 +764,141 @@ enum class ExpenseCategory(
             "electrician", "plumber", "carpenter",
             "home repair", "house repair", "maintenance",
             "paint", "wall paint", "paint service" , "ac repair", "fan repair", "geyser repair",
-            "water motor", "water pump", "pipe repair"
+            "water motor", "water pump", "pipe repair",
+            "almirah", "wardrobe", "cupboard",
+            "closet", "clothes cabinet", "storage cabinet",
+            "clothes rack", "hanger stand", "cloth stand",
+            "drawer", "chest drawer", "storage drawer",
+            "cabinet", "wooden cabinet", "steel cabinet",
+            "locker", "home locker", "steel almirah",
+            "bookshelf", "book shelf", "storage shelf",
+            "rack", "storage rack", "home rack",
+            "side table", "bedside table", "night stand",
+            "tv unit", "tv stand", "entertainment unit",
+            "dressing table", "makeup table", "vanity table",
+            "shoe cabinet", "shoe rack", "shoe storage",
+            "wall shelf", "floating shelf", "wall rack","bucket", "mug", "bath bucket",
+            "dustbin", "trash bin", "garbage bin",
+            "broom", "jhadu", "floor broom",
+            "mop", "floor mop", "cleaning mop",
+            "wiper", "floor wiper", "bathroom wiper",
+            "cleaning cloth", "duster", "floor cloth",
+            "laundry basket", "cloth basket", "laundry bag",
+            "cloth hanger", "hanger", "laundry hanger",
+            "drying stand", "cloth stand", "drying rack",
+            "door stopper", "door holder", "door guard",
+            "door hook", "wall hook", "hanger hook",
+            "wall nails", "wall hooks", "wall holder",
+            "towel", "bath towel", "hand towel",
+            "towel stand", "towel holder", "towel rack",
+            "bath mat", "bathroom mat", "toilet mat",
+            "soap dish", "soap stand", "soap holder",
+            "toilet brush", "toilet cleaner", "toilet holder",
+            "water bottle", "home bottle", "steel bottle",
+            "storage box", "plastic box", "container box",
+            "organizer", "drawer organizer", "storage organizer",
+            "file holder", "document holder", "paper holder",
+            "ladder", "step ladder", "home ladder",
+            "tool kit", "home tools", "repair tools",
+            "rope", "cloth rope", "drying rope",
+            "plastic stool", "small stool", "bathroom stool", "mop"
         )
     ),
 
-    SUBSCRIPTIONS(
-        Icons.Default.Subscriptions,
-        Color(0xFF00ACC1),
-        listOf(
-            // 🎬 Streaming platforms
-            "netflix", "prime", "prime video", "amazon prime",
-            "hotstar", "disney hotstar", "sonyliv", "sony liv",
-            "zee5", "voot", "jiocinema", "mx player",
-
-            // 🎵 Music
-            "spotify", "apple music", "youtube music", "gaana", "wynk",
-
-            // 📺 Video / Premium
-            "youtube premium",
-
-            // ☁️ Cloud / storage
-            "google one", "icloud", "dropbox", "onedrive",
-
-            // 💻 Software / tools
-            "windows", "microsoft 365", "office 365",
-            "adobe", "adobe cc", "photoshop subscription",
-            "canva pro", "notion", "chatgpt", "openai",
-
-            // 🎮 Gaming
-            "xbox game pass", "game pass", "playstation plus", "ps plus",
 
 
-            // 📰 News / others
-            "subscription", "monthly subscription", "annual subscription",
-            "auto debit", "autopay", "recurring payment"
-        )
-    ),
-
-    MEDICINE(
-        Icons.Default.MedicalServices,
-        Color(0xFFE53935),
+    HEALTH(
+        Icons.Default.MedicalServices,  // Pharmacy cross — universally understood for medical
+        Color(0xFFD32F2F),            // Clear red — urgency, health, medical
         listOf(
             "medicine","medicines", "tablet", "doctor", "hospital",
             "clinic", "medical", "pharmacy", "chemist", "medical store",
             "medicine shop", "tablet strip", "syrup", "medicine bill", "medical bill", "doctor fee",
-            "clinic fee", "hospital fee", "medical test", "ct scan",
+            "clinic fee", "hospital fee", "medical test", "ct scan", "therapy",
             "blood test", "health checkup", "diagnostic test", "mri" ,
             "medicine purchase", "pharmacy bill",
-            "doctor consultation" , "injection",
+            "doctor consultation" , "injection", "blood donate" , "hurts",
             "capsule", "appointment", "bandage", "pain killer",
             "antibiotic", "medical prescription" , "apollo pharmacy", "medplus", "netmeds",
-            "pharmeasy", "1mg", "tata 1mg",
+            "pharmeasy", "1mg", "tata 1mg", "sonography", "diagnostic",
             "dolo", "crocin", "paracetamol",
-            "vicks", "strepsils", "digene"
+            "vicks", "strepsils", "digene" , "condom"
         )
     ),
 
     TRANSPORT(
-        Icons.Default.DirectionsTransit,
-        Color(0xFF00C853),
-        listOf(
-    // general travel
+        Icons.Default.DirectionsCar,  // Car — most common transport expense trigger
+        Color(0xFF0F766E),            // Medium green — motion, roads, go
+        keywords =listOf(
+            // general travel
             "transport",
-    "travel", "trip", "road trip", "journey", "ride", "ride booking",
+            "travel", "trip", "road trip", "journey", "ride", "ride booking",
 
-    // car / vehicle
-    "car", "vehicle", "four wheeler", "auto", "auto rickshaw",
-    "taxi", "cab",
+            // car / vehicle
+            "car", "vehicle", "four wheeler", "auto", "auto rickshaw",
+            "taxi", "cab",
 
-    // ride apps
-    "uber", "ola", "rapido",
+            // ride apps
+            "uber", "ola", "rapido",
 
-    // bike / scooter
-    "bike", "motorbike", "motor cycle",
-    "two wheeler", "two-wheeler",
-    "scooter", "moped",
-    "bullet", "royal enfield",
-    "pulsar", "apache",
-    "ktm", "duke",
-    "yamaha", "honda", "hero", "bajaj",
+            // bike / scooter
+            "bike", "motorbike", "motor cycle",
+            "two wheeler", "two-wheeler",
+            "scooter", "moped",
+            "bullet", "royal enfield",
+            "pulsar", "apache",
+            "ktm", "duke", "yamaha",
+            "honda", "hero", "bajaj",
 
-    // bike service / repair
-    "bike service", "bike repair",
-    "engine oil", "chain oil",
-    "bike wash", "puncture",
-    "tyre", "tire", "bike tyre",
-    "bike mechanic", "bike accessories",
+            // bike service / repair
+            "bike service", "bike repair",
+            "engine oil", "chain oil",
+            "bike wash", "puncture",
+            "tyre", "tire", "bike tyre",
+            "bike mechanic", "bike accessories",
 
-    // cab / taxi
-    "cab ride", "taxi ride",
-    "taxi booking", "cab booking",
-    "taxi fare", "ride fare",
-    "auto fare", "ride charge",
+            // cab / taxi
+            "cab ride", "taxi ride",
+            "taxi booking", "cab booking",
+            "taxi fare", "ride fare",
+            "auto fare", "ride charge",
 
-    // bus
-    "bus", "bus ticket", "rtc", "ksrtc", "tsrtc",
-    "private bus", "city bus",
-    "bus fare", "bus journey",
-    "bus travel", "bus depot",
-    "bus booking", "bus transport",
-    "redbus", "abhibus",
-    "bus stand", "bus stop",
-    "volvo bus", "sleeper bus", "ac bus",
+            // bus
+            "bus", "bus ticket", "rtc", "ksrtc", "tsrtc",
+            "private bus", "city bus",
+            "bus fare", "bus journey",
+            "bus travel", "bus depot",
+            "bus booking", "bus transport",
+            "redbus", "abhibus",
+            "bus stand", "bus stop",
+            "volvo bus", "sleeper bus", "ac bus",
 
-    // train
-    "train", "rail", "railway",
-    "irctc", "rail ticket", "train ticket",
-    "metro", "subway", "bullet train",
-    "local train", "platform ticket",
-    "tatkal", "railway station",
-    "platform", "coach",
-    "sleeper", "ac coach",
+            // train
+            "train", "rail", "railway",
+            "irctc", "rail ticket", "train ticket",
+            "metro", "subway", "bullet train",
+            "local train", "platform ticket",
+            "tatkal", "railway station",
+            "platform", "coach",
+            "sleeper", "ac coach",
 
-    // flight
-    "flight", "air", "airline",
-    "airplane", "aeroplane", "plane",
-    "air ticket", "flight ticket",
-    "boarding pass", "boarding",
-    "checkin", "check-in",
-    "departure", "arrival",
-    "terminal fee", "airfare",
-    "airport", "terminal",
-    "baggage", "luggage",
-    "indigo", "air india", "vistara",
-    "akasa", "spacejet",
+            // flight
+            "flight", "air", "airline",
+            "airplane", "aeroplane", "plane",
+            "air ticket", "flight ticket",
+            "boarding pass", "boarding",
+            "checkin", "check-in",
+            "departure", "arrival",
+            "terminal fee", "airfare",
+            "airport", "terminal",
+            "baggage", "luggage",
+            "indigo", "air india", "vistara",
+            "akasa", "spacejet",
 
-    // road expenses
-    "parking", "toll", "fastag",
-    "highway", "expressway",
-    "parking fee", "toll tax",
+            // road expenses
+            "parking", "toll", "fastag",
+            "highway", "expressway",
+            "parking fee", "toll tax",
 
             "parking", "toll", "fastag",
             "petrol", "fuel", "diesel",
@@ -726,7 +907,7 @@ enum class ExpenseCategory(
             "petrol station", "fuel station",
             "cng", "cng refill",
 
-          // EV charging
+            // EV charging
             "charging", "ev charging", "charging station" ,"hotel", "room",
             "stay", "lodge", "resort", "guest house", "oyo", "hostel", "Dhaba",
             "stay booking", "room booking", "hotel booking", "checkin hotel", "check-out",
@@ -757,12 +938,12 @@ enum class ExpenseCategory(
             "mini cooper", "maserati", "aston martin",
 
             "merc", "g wagon", "g class"
-      )
+        )
     ),
 
     OTHER(
-        Icons.Default.Category,
-        Color(0xFF9E9E9E),
+        Icons.Outlined.GridView,       // Grid — neutral, "everything else" feel
+        Color(0xFF9E9E9E),            // Blue-grey — neutral, uncategorised
         listOf()
     );
 
@@ -787,3 +968,27 @@ enum class ExpenseCategory(
         }
     }
 }
+
+@Composable
+fun CategoryIcon(
+    category: ExpenseCategory,
+    tint: Color,
+    size: Dp = 24.dp
+) {
+    if (category.icon != null) {
+        Icon(
+            imageVector = category.icon,
+            contentDescription = category.name,
+            tint = tint,
+            modifier = Modifier.size(size)
+        )
+    } else {
+        Icon(
+            painter = painterResource(id = category.drawable!!),
+            contentDescription = category.name,
+            tint = tint,
+            modifier = Modifier.size(size)
+        )
+    }
+}
+

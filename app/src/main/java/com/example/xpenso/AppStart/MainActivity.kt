@@ -1,5 +1,13 @@
 package com.example.xpenso.AppStart
 
+import androidx.compose.runtime.Composable
+
+import androidx.compose.runtime.*
+import androidx.compose.material3.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Bundle
@@ -13,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.google.firebase.analytics.FirebaseAnalytics
 import androidx.compose.ui.platform.LocalContext
-import com.example.xpenso.NotificationsWork.RequestNotificationPermissionOnce
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.ui.theme.XpensoTheme
 
@@ -24,7 +31,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
-        val fromNotification = intent.getBooleanExtra("fromNotification", false)
 
         enableEdgeToEdge()
 
@@ -42,18 +48,21 @@ class MainActivity : ComponentActivity() {
             }
 
             // ✅ Clear BOTH in-app and OS badges when opening from a notification
-            LaunchedEffect(fromNotification) {
-                if (fromNotification) {
-                    settingsStore.clearNotificationCount()
-                    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    notificationManager.cancelAll()
-                }
-            }
+//            LaunchedEffect(fromNotification) {
+//                if (fromNotification) {
+//                    settingsStore.clearNotificationCount()
+//                    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+//                    notificationManager.cancelAll()
+//                }
+//            }
 
-            RequestNotificationPermissionOnce(settingsStore)
+            val notificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            notificationManager.cancelAll()
 
             val themeMode by settingsStore.themeMode.collectAsState(initial = 0)
-            val colorStyle by settingsStore.colorStyle.collectAsState(initial = 1)
+//            val colorStyle by settingsStore.colorStyle.collectAsState(initial = 1)
 
             val darkTheme = when (themeMode) {
                 1 -> false
@@ -63,13 +72,51 @@ class MainActivity : ComponentActivity() {
 
             XpensoTheme(
                 darkTheme = darkTheme,
-                dynamicColor = colorStyle == 1
+//                dynamicColor = colorStyle == 1
             ) {
                 AppRoot(
                     settingsStore = settingsStore,
-                    startInNotificationScreen = fromNotification
                 )
+//                FunScreen()
             }
         }
     }
 }
+
+//fun get(name:String) : String{
+//    return "Hello $name , you are bulding something cool!"
+//}
+
+//@Composable
+//fun FunScreen() {
+//
+//    var text by remember { mutableStateOf("Click button") }
+//    var clicked by remember { mutableStateOf(false) }
+//
+//    Column(
+//        modifier = Modifier.fillMaxSize(),
+//        verticalArrangement = Arrangement.Center,
+//        horizontalAlignment = Alignment.CenterHorizontally
+//    ) {
+//
+//        Text(text = text)
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        Button(onClick = {
+//            text = get("John")
+//            clicked = true
+//        }) {
+//            Text("Show Message")
+//        }
+//    }
+//
+//    LaunchedEffect(clicked) {
+//        if (clicked) {
+//            kotlinx.coroutines.delay(3000)
+//            text = "Click button"   // reset instead of empty
+//            clicked = false
+//        }
+//    }
+//}
+

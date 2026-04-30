@@ -40,15 +40,40 @@ private val LightBudgetColors = BudgetColors(
 // 4. Create a "Local" provider so screens can find these colors
 val LocalBudgetColors = staticCompositionLocalOf { LightBudgetColors }
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF82B1FF),      // Soft Indigo Blue
-    secondary = Color(0xFF64B5F6),    // Finance Blue
-    tertiary = Color(0xFF4DD0E1)      // Cyan Accent
+    primary = Color(0xFF8B93F8),
+    onPrimary = Color(0xFF070B14),
+
+//    primaryContainer = Color(0xFF141A33),
+    primaryContainer = Color(0xFF1A2242),
+    onPrimaryContainer = Color(0xFFE0E7FF),
+
+    secondary = Color(0xFF5DD6A4),
+    tertiary = Color(0xFF67E8F9),
+
+    background = Color(0xFF060A10),
+
+    surface = Color(0xFF0E131B),
+
+    surfaceVariant = Color(0xFF121826),
+
+    outline = Color(0xFF334155),
+    outlineVariant = Color(0xFF1F2937)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF2962FF),      // Brand Indigo (Xpenso identity)
-    secondary = Color(0xFF42A5F5),    // Smooth Blue
-    tertiary = Color(0xFF00ACC1)      // Cyan Analytics Accent
+    primary = Color(0xFF4338CA),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFEEF2FF),
+    onPrimaryContainer = Color(0xFF312E81),
+    secondary = Color(0xFF059669),
+    tertiary = Color(0xFF0891B2),
+    background = Color(0xFFF6F8FB),  // softer
+    surface = Color(0xFFFAFBFF),
+
+    onBackground = Color(0xFF0F172A),
+    surfaceVariant = Color(0xFFF1F5F9),
+    outline = Color(0xFFB8C2CC),
+    outlineVariant = Color(0xFFE2E8F0)
 )
 
 @Composable
@@ -56,29 +81,31 @@ fun XpensoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
 
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+//    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
+//    val context = LocalContext.current
+//
+//    val colorScheme =
+//        if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//
+//            // SYSTEM COLORS (Material You)
+//            if (darkTheme)
+//                dynamicDarkColorScheme(context)
+//            else
+//                dynamicLightColorScheme(context)
+//
+//        } else {
+//
+//            // APP COLORS (BLUE THEME)
+//            if (darkTheme)
+//                DarkColorScheme
+//            else
+//                LightColorScheme
+//        }
 
     val colorScheme =
-        if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-
-            // SYSTEM COLORS (Material You)
-            if (darkTheme)
-                dynamicDarkColorScheme(context)
-            else
-                dynamicLightColorScheme(context)
-
-        } else {
-
-            // APP COLORS (BLUE THEME)
-            if (darkTheme)
-                DarkColorScheme
-            else
-                LightColorScheme
-        }
-
+        if (darkTheme) DarkColorScheme else LightColorScheme
     // 5. Select which custom set to provide
     val budgetColors = if (darkTheme) DarkBudgetColors else LightBudgetColors
 

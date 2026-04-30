@@ -1,57 +1,46 @@
 package com.example.xpenso.Home
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.xpenso.utils.CurrencyFormatter
+
 @Composable
 fun DailyExpenseCard(
     currencySymbol: String,
     dailyTotal: Double
 ) {
-
-    // -------- Smooth number counting --------
-    val animatedAmount by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = dailyTotal.toFloat(),
-        animationSpec = androidx.compose.animation.core.tween(durationMillis = 500),
-        label = "DailyAmountAnim"
-    )
-
-    // -------- Subtle scale pulse when value changes --------
-    val scale = remember { androidx.compose.animation.core.Animatable(1f) }
+    // Animate a 0..1 progress value, then interpolate using Double math.
+    // This preserves full 9-digit precision — no Float cast on the amount itself.
+    // Animation only triggers when dailyTotal actually changes.
+    val progress = remember { Animatable(0f) }
+    var previousTotal by remember { mutableDoubleStateOf(dailyTotal) }
+    var startTotal by remember { mutableDoubleStateOf(0.0) }
 
     LaunchedEffect(dailyTotal) {
-        scale.animateTo(
-            1.05f,
-            animationSpec = tween(150)
-        )
-        scale.animateTo(
-            1f,
-            animationSpec = tween(350)
+        startTotal = previousTotal
+        previousTotal = dailyTotal
+        progress.snapTo(0f)
+        progress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 600)
         )
     }
 
+    // Interpolate between old and new value using Double — no Float precision loss
+    val displayAmount = startTotal + (dailyTotal - startTotal) * progress.value
 
     Card(
-        elevation = CardDefaults.cardElevation(0.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scale.value
-                scaleY = scale.value
-                alpha = 0.98f
-            },
+        elevation = CardDefaults.cardElevation(2.dp),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -63,7 +52,6 @@ fun DailyExpenseCard(
                 vertical = 18.dp
             )
         ) {
-
             Text(
                 text = "Spent Today",
                 style = MaterialTheme.typography.titleMedium,
@@ -75,23 +63,21 @@ fun DailyExpenseCard(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
 
-                val baseStyle = MaterialTheme.typography.displaySmall
+                val baseStyle1 = MaterialTheme.typography.displaySmall
 
-                // Currency symbol
                 Text(
                     text = currencySymbol,
-                    fontSize = (baseStyle.fontSize.value * 0.65f).sp,
+                    fontSize = (baseStyle1.fontSize.value * 0.65f).sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
                 Spacer(Modifier.width(8.dp))
 
-                // -------- Animated amount --------
                 Text(
-                    text = CurrencyFormatter.format(animatedAmount.toDouble(), currencySymbol),
+                    text = CurrencyFormatter.format(displayAmount, currencySymbol),
                     style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }

@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.example.xpenso.InsightsModel.CategoryPieData
 
-
 @Composable
 fun CategoryDonutChart(
     data: List<CategoryPieData>,
@@ -29,9 +28,29 @@ fun CategoryDonutChart(
     currencySymbol: String,
     modifier: Modifier = Modifier
 ) {
+    // Step 1: only draw slices >= 1%
+    val visibleSlices = remember(data) {
+        data.filter { (it.percentage * 100f) >= 1f }
+    }
+
+    // Step 2: rescale visible slices so they sum to exactly 1.0
+    // This ensures they fill the full ring with no leftover gap,
+    // regardless of how much the dropped slices contributed.
+    // e.g. ELECTRONICS 90.0% + SHOPPING 9.0% = 99.0% visible
+    // rescaled: ELECTRONICS 90.9% + SHOPPING 9.1% → fills 100% of ring
+    val rescaledSlices = remember(visibleSlices) {
+        val visibleTotal = visibleSlices.sumOf { it.percentage.toDouble() }.toFloat()
+        if (visibleTotal <= 0f) emptyList()
+        else visibleSlices.map { it.copy(percentage = it.percentage / visibleTotal) }
+    }
+
+    // Step 3: dominant = only 1 slice visible after filter
+    val isDominant = rescaledSlices.size == 1
+    val dominantSlice = if (isDominant) rescaledSlices.firstOrNull() else null
+
     val animationProgress = remember { Animatable(0f) }
 
-    LaunchedEffect(data) {
+    LaunchedEffect(rescaledSlices.size) {
         animationProgress.snapTo(0f)
         animationProgress.animateTo(
             targetValue = 1f,
@@ -42,37 +61,44 @@ fun CategoryDonutChart(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(280.dp), // Increased height to accommodate larger donut
+            .height(280.dp),
         contentAlignment = Alignment.Center
     ) {
         Canvas(
             modifier = Modifier
-                .size(260.dp) // Increased size of the Canvas
+                .size(260.dp)
                 .padding(16.dp)
         ) {
-            var startAngle = -90f
-            val strokeWidth = 80f // Increased stroke width for a thicker donut
-            val gapAngle = 1f // Degrees for the gap between segments
+            val strokeWidth = 80f
 
-            val totalSegments = data.size
-            val totalGapSpace = if (totalSegments > 1) totalSegments * gapAngle else 0f // Apply gaps only if there's more than one segment
-
-            // Calculate the effective total angle available for all segments to be drawn
-            val effectiveTotalAngle = 360f - totalGapSpace
-
-            data.forEach { segment ->
-                // Calculate the sweep angle for the current segment, proportional to the effective total angle
-                val sweepAngleForSegment = segment.percentage * effectiveTotalAngle * animationProgress.value
-
+            if (isDominant) {
+                // Single slice — perfect unbroken ring, no gap possible
                 drawArc(
-                    color = segment.color,
-                    startAngle = startAngle,
-                    sweepAngle = sweepAngleForSegment,
+                    color = dominantSlice!!.color,
+                    startAngle = -90f,
+                    sweepAngle = 360f * animationProgress.value,
                     useCenter = false,
                     style = Stroke(width = strokeWidth)
                 )
-                // Move the start angle for the next segment, accounting for its sweep angle and the gap
-                startAngle += sweepAngleForSegment + gapAngle
+            } else {
+                val totalSegments = rescaledSlices.size
+                val gapAngle = if (totalSegments > 1) 1f else 0f
+                // Gap budget is based on visible slice count only
+                val effectiveTotalAngle = 360f - (totalSegments * gapAngle)
+                var startAngle = -90f
+
+                rescaledSlices.forEach { segment ->
+                    val sweepAngle =
+                        segment.percentage * effectiveTotalAngle * animationProgress.value
+                    drawArc(
+                        color = segment.color,
+                        startAngle = startAngle,
+                        sweepAngle = sweepAngle,
+                        useCenter = false,
+                        style = Stroke(width = strokeWidth)
+                    )
+                    startAngle += sweepAngle + gapAngle
+                }
             }
         }
 
@@ -80,18 +106,15 @@ fun CategoryDonutChart(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-
             Text(
                 text = "Total",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
             AnimatedAmount(
                 amount = totalAmount,
                 currencySymbol = currencySymbol,
             )
         }
-
     }
 }

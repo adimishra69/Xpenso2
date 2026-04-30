@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!--
+        Diamond: 4 vertices
+          Top    : 12, 2
+          Left   : 2,  10
+          Right  : 22, 10
+          Bottom : 12, 22
+        Girdle (widest horizontal band) at y=10
+    -->
+
+    <!-- ── 1. Full body fill ── -->
+    <path
+        android:pathData="M12,2 L22,10 L12,22 L2,10 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="12" android:startY="2"
+                android:endX="12"   android:endY="22">
+                <item android:offset="0.00" android:color="#FFD6EEFF" />
+                <item android:offset="0.30" android:color="#FF60B4FF" />
+                <item android:offset="0.68" android:color="#FF1565C0" />
+                <item android:offset="1.00" android:color="#FF072A6C" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- ── 2. Top-left crown facet  (lighter) ── -->
+    <path
+        android:pathData="M2,10 L12,2 L12,10 Z"
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.22" />
+
+    <!-- ── 3. Top-right crown facet  (darker) ── -->
+    <path
+        android:pathData="M22,10 L12,2 L12,10 Z"
+        android:fillColor="#FF000000"
+        android:fillAlpha="0.10" />
+
+    <!-- ── 4. Bottom-left pavilion facet  (darker) ── -->
+    <path
+        android:pathData="M2,10 L12,22 L12,10 Z"
+        android:fillColor="#FF000000"
+        android:fillAlpha="0.16" />
+
+    <!-- ── 5. Bottom-right pavilion facet  (subtle light) ── -->
+    <path
+        android:pathData="M22,10 L12,22 L12,10 Z"
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.06" />
+
+    <!-- ── 6. Girdle line (horizontal) ── -->
+    <path
+        android:pathData="M2,10 L22,10"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="0.55"
+        android:strokeAlpha="0.35"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
+
+    <!-- ── 7. Center ridge (vertical) ── -->
+    <path
+        android:pathData="M12,2 L12,22"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="0.45"
+        android:strokeAlpha="0.18"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
+
+    <!-- ── 8. Top-left edge facet line ── -->
+    <path
+        android:pathData="M2,10 L12,2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="0.4"
+        android:strokeAlpha="0.28"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
+
+    <!-- ── 9. Top-right edge facet line ── -->
+    <path
+        android:pathData="M22,10 L12,2"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.4"
+        android:strokeAlpha="0.14"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
+
+    <!-- ── 10. Outer outline ── -->
+    <path
+        android:pathData="M12,2 L22,10 L12,22 L2,10 Z"
+        android:strokeColor="#FFA8D4FF"
+        android:strokeWidth="0.7"
+        android:strokeAlpha="0.50"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <!-- ── 11. Inner glow — top crown area ── -->
+    <path
+        android:pathData="M8,6.5 Q12,4 16,6.5 Q12,9 8,6.5 Z"
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.12" />
+
+    <!-- ── 12. Primary sparkle — top-left ── -->
+    <path
+        android:pathData="M6.5,5.5 L7,4 L7.5,5.5 L9,6 L7.5,6.5 L7,8 L6.5,6.5 L5,6 Z"
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.95" />
+
+    <!-- ── 13. Secondary sparkle — top-right (smaller) ── -->
+    <path
+        android:pathData="M16.8,4.2 L17.2,3 L17.6,4.2 L18.8,4.6 L17.6,5 L17.2,6.2 L16.8,5 L15.6,4.6 Z"
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.60" />
+
+    <!-- ── 14. Tiny glint dot ── -->
+    <path
+        android:pathData="M9.2,8.5 A0.9,0.9 0 1,1 11,8.5 A0.9,0.9 0 1,1 9.2,8.5 Z"
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.40" />
+
+</vector>

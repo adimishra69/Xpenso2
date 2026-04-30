@@ -96,13 +96,28 @@ fun TotalYearlyExpenseCard(
 
             val baseStyle = MaterialTheme.typography.displayMedium
 
+            val formattedAmount = CurrencyFormatter.format(totalExpense, currencySymbol)
+
+// 🔥 Length-based dynamic scaling
+            val length = formattedAmount.length
+
+            val scaleFactor = when {
+                length <= 8 -> 1.0f
+                length <= 12 -> 0.89f
+                length <= 16 -> 0.74f
+                else -> 0.63f
+            }
+
+// Base size
+            val baseSize = baseStyle.fontSize
+
             Text(
                 text = buildAnnotatedString {
 
-                    // Currency symbol — smaller & lighter
+                    // 🔹 Currency — always smaller relative to amount
                     withStyle(
                         SpanStyle(
-                            fontSize = (baseStyle.fontSize.value - 14).sp,
+                            fontSize = (baseSize * scaleFactor * 0.65f),
                             fontWeight = FontWeight.Medium
                         )
                     ) {
@@ -110,17 +125,15 @@ fun TotalYearlyExpenseCard(
                         append(" ")
                     }
 
-                    // Amount — full size & extra bold
+                    // 🔹 Amount — dynamic size
                     withStyle(
                         SpanStyle(
-                            fontSize = (baseStyle.fontSize.value - 6).sp,
+                            fontSize = (baseSize * scaleFactor),
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 0.1.sp
                         )
                     ) {
-                        append(
-                            CurrencyFormatter.format(totalExpense, currencySymbol)
-                        )
+                        append(formattedAmount)
                     }
                 },
                 color = MaterialTheme.colorScheme.onPrimaryContainer

@@ -31,7 +31,7 @@ class SettingsStore(private val context: Context) {
         val IS_PREMIUM = booleanPreferencesKey("is_premium")   // ⭐ ADD THIS
 
         private val COLOR_STYLE_KEY = intPreferencesKey("color_style_key")
-        val NOTIFICATION_PERMISSION_ASKED = booleanPreferencesKey("notification_permission_asked")
+//        val NOTIFICATION_PERMISSION_ASKED = booleanPreferencesKey("notification_permission_asked")
         val SCREEN_MODE = intPreferencesKey("screen_mode")
         val IS_SECURITY_ENABLED = booleanPreferencesKey("is_security_enabled")
         val SECURITY_PIN = stringPreferencesKey("security_pin")
@@ -40,6 +40,7 @@ class SettingsStore(private val context: Context) {
         val NOTIFICATION_COUNT = intPreferencesKey("notification_count")
         val NOTIFICATION_HISTORY = stringPreferencesKey("notification_history")
 
+        val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
 
     }
 
@@ -55,14 +56,18 @@ class SettingsStore(private val context: Context) {
     val isSecurityEnabled: Flow<Boolean> = context.dataStore.data.map { it[IS_SECURITY_ENABLED] ?: false }
     val securityPin: Flow<String?> = context.dataStore.data.map { it[SECURITY_PIN] }
     val useBiometrics: Flow<Boolean> = context.dataStore.data.map { it[USE_BIOMETRICS] ?: false }
-    val notificationCount: Flow<Int> = context.dataStore.data.map { it[NOTIFICATION_COUNT] ?: 0 }
+//    val notificationCount: Flow<Int> = context.dataStore.data.map { it[NOTIFICATION_COUNT] ?: 0 }
+
+    val reminderEnabled: Flow<Boolean> = context.dataStore.data.map {
+        it[REMINDER_ENABLED] ?: false
+    }
 
     val isPremium: Flow<Boolean> =
         context.dataStore.data.map { it[IS_PREMIUM] ?: false }
-    val notificationPermissionAsked: Flow<Boolean> = context.dataStore.data.map {
-        it[NOTIFICATION_PERMISSION_ASKED] ?: false
-
-    }
+//    val notificationPermissionAsked: Flow<Boolean> = context.dataStore.data.map {
+//        it[NOTIFICATION_PERMISSION_ASKED] ?: false
+//
+//    }
 
     val notificationHistory: Flow<List<NotificationMessage>> = context.dataStore.data.map { preferences ->
         val json = preferences[NOTIFICATION_HISTORY] ?: "[]"
@@ -94,12 +99,12 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[NOTIFICATION_HISTORY] = gson.toJson(currentHistory) }
     }
 
-    suspend fun incrementNotificationCount() {
-        context.dataStore.edit { preferences ->
-            val currentCount = preferences[NOTIFICATION_COUNT] ?: 0
-            preferences[NOTIFICATION_COUNT] = currentCount + 1
-        }
-    }
+//    suspend fun incrementNotificationCount() {
+//        context.dataStore.edit { preferences ->
+//            val currentCount = preferences[NOTIFICATION_COUNT] ?: 0
+//            preferences[NOTIFICATION_COUNT] = currentCount + 1
+//        }
+//    }
 
 
     suspend fun savePremium(enabled: Boolean) {
@@ -134,9 +139,15 @@ class SettingsStore(private val context: Context) {
         }
     }
 
-    suspend fun setNotificationPermissionAsked() {
-        context.dataStore.edit { it[NOTIFICATION_PERMISSION_ASKED] = true }
-    }
+//    suspend fun setNotificationPermissionAsked() {
+//        context.dataStore.edit { it[NOTIFICATION_PERMISSION_ASKED] = true }
+//    }
+//
+//    suspend fun saveReminderEnabled(enabled: Boolean) {
+//        context.dataStore.edit {
+//            it[REMINDER_ENABLED] = enabled
+//        }
+//    }
 
     suspend fun saveOnboardingCompleted(completed: Boolean) = context.dataStore.edit {
         it[ONBOARDING_COMPLETED] = completed

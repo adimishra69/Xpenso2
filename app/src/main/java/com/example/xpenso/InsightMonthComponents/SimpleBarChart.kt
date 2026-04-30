@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.example.xpenso.InsightsModel.MonthlyTrendData
 import com.example.xpenso.utils.CurrencyCompactFormatter
 
+
 @Composable
 fun SimpleBarChart(
     data: List<MonthlyTrendData>,
@@ -75,7 +76,7 @@ fun SimpleBarChart(
                 modifier = Modifier
                     .width(60.dp)
                     .graphicsLayer(alpha = animationProgress.value) // Smooth fade in
-                    .clickable { onMonthClick(index) }
+
             ) {
 
                 if (item.amount > 0) {
@@ -96,23 +97,24 @@ fun SimpleBarChart(
                     Text("", fontSize = 10.sp)
                 }
 
-
                 Spacer(Modifier.height(4.dp))
 
+                val maxBarHeight = 160.dp
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.6f)
                         .height(
-                            (140.dp * barHeightFactor * animationProgress.value) // Animate height
+                            (maxBarHeight * barHeightFactor * animationProgress.value) // Animate height
                                 .coerceAtLeast(4.dp)
                         )
                         .background(
                             if (isSelected)
-                                MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.primary.copy(.9f)
                             else
                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                             RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
                         )
+                        .clickable { onMonthClick(index) }
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -132,3 +134,23 @@ fun SimpleBarChart(
         }
     }
 }
+
+//@Preview(showBackground = true , showSystemUi = true)
+//@Composable
+//fun SimpleBarChartPreview() {
+//
+//    val dummyData = listOf(
+//        MonthlyTrendData("Jan", 2000.0, 1, 2026),
+//        MonthlyTrendData("Feb", 3500.0, 2, 2026),
+//        MonthlyTrendData("Mar", 1800.0, 3, 2026),
+//        MonthlyTrendData("Apr", 4200.0, 4, 2026),
+//        MonthlyTrendData("May", 1500.0, 5, 2026)
+//    )
+//
+//    SimpleBarChart(
+//        data = dummyData,
+//        selectedIndex = 0,
+//        currencySymbol = "₹",
+//        onMonthClick = {}
+//    )
+//}

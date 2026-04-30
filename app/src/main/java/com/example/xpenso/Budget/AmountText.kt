@@ -16,6 +16,12 @@ enum class AmountTextStyle {
     BUDGET
 }
 
+/**
+ * Renders a currency amount with a smaller, lighter symbol prefix.
+ *
+ * [AmountTextStyle.SPENT]  — medium size, used for secondary/inline values
+ * [AmountTextStyle.BUDGET] — large size, used as the primary headline figure
+ */
 @Composable
 fun AmountText(
     amount: Double,
@@ -23,44 +29,74 @@ fun AmountText(
     style: AmountTextStyle
 ) {
     val typography = MaterialTheme.typography
+    val colorScheme = MaterialTheme.colorScheme
 
-    // choose sizes based on style
+    // ── Size scale ───────────────────────────────────────────────────────────
     val amountFontSize: TextUnit
     val symbolFontSize: TextUnit
+    val amountFontWeight: FontWeight
+    val symbolColor = colorScheme.onSurfaceVariant
+    val amountColor = colorScheme.onSurface
 
     when (style) {
         AmountTextStyle.SPENT -> {
             amountFontSize = typography.titleMedium.fontSize
-            symbolFontSize = (typography.titleMedium.fontSize.value - 2).sp
+            symbolFontSize = (typography.titleMedium.fontSize.value - 3).sp
+            amountFontWeight = FontWeight.SemiBold
         }
-
         AmountTextStyle.BUDGET -> {
-            amountFontSize = typography.headlineSmall.fontSize
-            symbolFontSize = (typography.headlineSmall.fontSize.value - 4).sp
+
+            val formattedAmount = CurrencyFormatter.format(
+                amount = amount,
+                currencySymbol = currencySymbol
+            )
+
+            val digitCount = formattedAmount
+                .replace("[^0-9]".toRegex(), "")
+                .length
+
+            val baseSize = typography.headlineSmall.fontSize
+
+            amountFontSize =
+                if (digitCount > 9)
+                    (baseSize.value - 3).sp
+                else
+                    baseSize
+
+            symbolFontSize =
+                if (digitCount > 9)
+                    (baseSize.value - 9).sp
+                else
+                    (baseSize.value - 6).sp
+
+            amountFontWeight = FontWeight.Bold
         }
     }
 
+    // ── Rendered text ────────────────────────────────────────────────────────
     Text(
         text = buildAnnotatedString {
 
-            // currency symbol (smaller + lighter)
+            // Currency symbol — smaller + muted, with a narrow gap after
             withStyle(
                 SpanStyle(
                     fontSize = symbolFontSize,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = symbolColor,
+                    letterSpacing = 0.sp
                 )
             ) {
                 append(currencySymbol)
-                append(" ")
+                append("\u2009") // thin space for tighter symbol–number gap
             }
 
-            // amount (bold)
+            // Amount — bold, primary colour, tight letter-spacing
             withStyle(
                 SpanStyle(
                     fontSize = amountFontSize,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = amountFontWeight,
+                    color = amountColor,
+                    letterSpacing = (-0.5).sp
                 )
             ) {
                 append(

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreditCard
@@ -27,16 +28,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 import com.example.xpenso.Database.ExpenseEntity
-
+import com.example.xpenso.InsightMonthComponents.toDisplayUpper
 import com.example.xpenso.utils.CurrencyFormatter
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -49,136 +54,163 @@ fun TransactionItem(
     expense: ExpenseEntity,
     currencySymbol: String
 ) {
-    val category = ExpenseCategory.detect(expense.title)
+    val category =
+        ExpenseCategory.entries
+            .find { it.name == expense.category }
+            ?: ExpenseCategory.OTHER
 
     val animation = remember { Animatable(0f) }
-
     LaunchedEffect(expense.id) {
-        animation.animateTo(1f,     tween(300))
+        animation.animateTo(1f, tween(300))
     }
+
+    val categoryColor  = category.color
+    val onSurface      = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVar   = MaterialTheme.colorScheme.onSurfaceVariant
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer {
-                alpha = animation.value
-                // Reduce Y translation from 40f to 20f for a smoother "float-in" effect
+                alpha       = animation.value
                 translationY = (1 - animation.value) * 20f
             },
-        shape = RoundedCornerShape(24.dp), // Increase from default to 24dp for a modern feel
+        shape  = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        // Add a very subtle border
         border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            width = 0.7.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)
         ),
-        // Add a tiny bit of elevation
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(horizontal = 18.dp, vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
+            // ── Category icon — flat soft circle, no glow ─────────
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        category.color.copy(alpha = 0.12f),
-                        RoundedCornerShape(16.dp)
-                    ),
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(categoryColor.copy(alpha = 0.10f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = category.icon,
-                    contentDescription = category.name,
-                    tint = category.color,
-                    modifier = Modifier.size(24.dp)
+                CategoryIcon(
+                    category = category,
+                    tint = category.color
                 )
             }
 
             Spacer(Modifier.width(14.dp))
 
+            // ── Title + meta ──────────────────────────────────────
             Column(Modifier.weight(1f)) {
 
                 Text(
-                    expense.title,
-                    style = MaterialTheme.typography.titleMedium, // Changed from bodyLarge
-                    fontWeight = FontWeight.ExtraBold, // Use ExtraBold for better contrast
-                    color = MaterialTheme.colorScheme.onSurface
+                    text     = expense.title,
+                    style    = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.2).sp,
+                    color    = onSurface,
+                    maxLines = 1
                 )
 
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(4.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
 
                     val paymentIcon = when (expense.paymentMode) {
                         "Cash" -> Icons.Default.Payments
                         "Card" -> Icons.Default.CreditCard
-                        "UPI" -> Icons.Default.QrCode
-                        else -> Icons.Default.Payments
+                        "UPI"  -> Icons.Default.QrCode
+                        else   -> Icons.Default.CreditCard
                     }
 
                     Icon(
-                        paymentIcon,
+                        imageVector    = paymentIcon,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier       = Modifier.size(11.dp),
+                        tint           = onSurfaceVar.copy(alpha = 0.40f)
                     )
 
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(4.dp))
 
                     Text(
-                        "${expense.paymentMode} • ${
-                            SimpleDateFormat(
-                                "hh:mm a",
-                                Locale.getDefault()
-                            ).format(Date(expense.timestamp))
-                        }",
+                        text  = expense.paymentMode,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f)
+                        fontSize = 11.sp,
+                        color = onSurfaceVar.copy(alpha = 0.45f),
+                        letterSpacing = 0.sp
+                    )
+
+                    Text(
+                        text  = "  ·  ",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 11.sp,
+                        color = onSurfaceVar.copy(alpha = 0.22f)
+                    )
+
+                    Text(
+                        text = SimpleDateFormat("hh:mm a", Locale.getDefault())
+                            .format(Date(expense.timestamp)),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 11.sp,
+                        color = onSurfaceVar.copy(alpha = 0.38f),
+                        letterSpacing = 0.sp
                     )
                 }
             }
-            val baseStyle = MaterialTheme.typography.bodyLarge
 
-            Text(
-                text = buildAnnotatedString {
+            Spacer(Modifier.width(16.dp))
 
-                    // Currency symbol — smaller & lighter
-                    withStyle(
-                        SpanStyle(
-                            fontSize = (baseStyle.fontSize.value * 0.75f).sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    ) {
-                        append(currencySymbol)
-                        append(" ")
-                    }
+            // ── Amount + category tag ─────────────────────────────
+            Column(horizontalAlignment = Alignment.End) {
 
-                    // Amount — full size & bold
-                    withStyle(
-                        SpanStyle(
-                            fontSize = baseStyle.fontSize,
-                            fontWeight = FontWeight.Bold
-                        )
-                    ) {
-                        append(
-                            CurrencyFormatter.format(
-                                expense.amount,
-                                currencySymbol
+                val baseStyle = MaterialTheme.typography.bodyLarge
+                Text(
+                    text = buildAnnotatedString {
+                        // Currency symbol — ghost weight
+                        withStyle(
+                            SpanStyle(
+                                fontSize   = (baseStyle.fontSize.value * 0.69f).sp,
+                                fontWeight = FontWeight.Normal,
+                                color      = onSurface.copy(alpha = 0.30f),
+                                baselineShift = BaselineShift(0.1f)
                             )
-                        )
+                        ) {
+                            append("$currencySymbol ")
+                        }
+                        // Amount — reads first, bold and confident
+                        withStyle(
+                            SpanStyle(
+                                fontSize      = (baseStyle.fontSize.value * 1.0f).sp,
+                                fontWeight    = FontWeight.Bold,
+                                letterSpacing = (-0.4).sp,
+                                color         = onSurface.copy(alpha = 0.90f)
+                            )
+                        ) {
+                            append(CurrencyFormatter.format(expense.amount, currencySymbol))
+                        }
                     }
-                },
-                color = MaterialTheme.colorScheme.onSurface
-            )
+                )
 
+                Spacer(Modifier.height(3.dp))
+
+                // Barely-there category label — the whisper detail
+                Text(
+                    text          = category.name.toDisplayUpper(),
+                    style         = MaterialTheme.typography.labelSmall,
+                    fontSize      = 9.sp,
+                    fontWeight    = FontWeight.Medium,
+                    letterSpacing = 0.6.sp,
+                    color         = categoryColor.copy(alpha = 0.50f)
+                )
+            }
         }
     }
 }
