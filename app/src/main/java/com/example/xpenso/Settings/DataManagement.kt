@@ -6,15 +6,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.*
 
 import androidx.compose.ui.platform.LocalContext
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.ExpenseViewModel
 
 @Composable
 fun DataManagementDialogs(
     expenseViewModel: ExpenseViewModel,
-    isPremium: Boolean,
-    onNavigateToPremium: () -> Unit,
-    showBackup: Boolean,
-    onDismissBackup: () -> Unit,
+//    isPremium: Boolean,
+//    onNavigateToPremium: () -> Unit,
+//    showBackup: Boolean,
+//    onDismissBackup: () -> Unit,
     showRestore: Boolean,
     onDismissRestore: () -> Unit
 ) {

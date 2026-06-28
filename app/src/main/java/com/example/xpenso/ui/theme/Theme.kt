@@ -1,5 +1,6 @@
 package com.example.xpenso.ui.theme
 
+import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,9 +10,12 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 // 1. This holds our custom budget status colors
 data class BudgetColors(
@@ -76,12 +80,70 @@ private val LightColorScheme = lightColorScheme(
     outlineVariant = Color(0xFFE2E8F0)
 )
 
+private val ModernDarkColorScheme = darkColorScheme(
+    // Luxury Graphite + Bronze Theme
+    // Grey is the main color, bronze/brown is the supporting accent.
+
+    // Primary accent (bronze)
+    primary = Color(0xFFB08968),          // Warm bronze
+    onPrimary = Color(0xFF1A1410),
+
+    primaryContainer = Color(0xFF3A2C22), // Deep bronze container
+    onPrimaryContainer = Color(0xFFF5E8DD),
+
+    secondary = Color(0xFFC4A484),        // Soft bronze
+    tertiary = Color(0xFFD6B89B),         // Champagne bronze
+
+    // Main neutral surfaces (grey-focused)
+    background = Color(0xFF121416),       // Deep graphite grey
+    onBackground = Color(0xFFF8FAFC),
+
+    surface = Color(0xFF121416),          // Same as background
+    onSurface = Color(0xFFF8FAFC),
+
+    surfaceVariant = Color(0xFF1E2227),   // Elevated grey surface
+    onSurfaceVariant = Color(0xFFD1D5DB),
+
+    // Borders
+    outline = Color(0xFF4B5563),
+    outlineVariant = Color(0xFF2D3339)
+)
+
+private val ModernLightColorScheme = lightColorScheme(
+    // Luxury Grey + Bronze Theme (Light)
+
+    // Primary accent (bronze)
+    primary = Color(0xFF8B5E3C),          // Rich bronze brown
+    onPrimary = Color.White,
+
+    primaryContainer = Color(0xFFF3E7DC), // Soft warm beige
+    onPrimaryContainer = Color(0xFF3E2A1E),
+
+    secondary = Color(0xFFA97C5A),
+    tertiary = Color(0xFFC4A484),
+
+    // Main neutral surfaces (grey-focused)
+    background = Color(0xFFF7F8FA),
+    onBackground = Color(0xFF111827),
+
+    surface = Color(0xFFF7F8FA),          // Same as background
+    onSurface = Color(0xFF111827),
+
+    surfaceVariant = Color(0xFFEFF1F4),
+    onSurfaceVariant = Color(0xFF4B5563),
+
+    // Borders
+    outline = Color(0xFFD1D5DB),
+    outlineVariant = Color(0xFFE5E7EB)
+)
+
 @Composable
 fun XpensoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
 
     // Dynamic color is available on Android 12+
 //    dynamicColor: Boolean = true,
+    colorStyle: Int = 0,
     content: @Composable () -> Unit
 ) {
 //    val context = LocalContext.current
@@ -105,9 +167,14 @@ fun XpensoTheme(
 //        }
 
     val colorScheme =
-        if (darkTheme) DarkColorScheme else LightColorScheme
+        when (colorStyle) {
+            1 -> if (darkTheme) ModernDarkColorScheme else ModernLightColorScheme
+            else -> if (darkTheme) DarkColorScheme else LightColorScheme
+        }
     // 5. Select which custom set to provide
     val budgetColors = if (darkTheme) DarkBudgetColors else LightBudgetColors
+
+    UpdateSystemBars(darkTheme)
 
     // 6. Wrap the theme so all children can use budgetColors
     CompositionLocalProvider(LocalBudgetColors provides budgetColors) {
@@ -116,5 +183,16 @@ fun XpensoTheme(
             typography = Typography,
             content = content
         )
+    }
+}
+
+@Composable
+fun UpdateSystemBars(darkTheme: Boolean) {
+    val view = LocalView.current
+
+    SideEffect {
+        val window = (view.context as Activity).window
+        WindowCompat.getInsetsController(window, view)
+            .isAppearanceLightStatusBars = !darkTheme
     }
 }

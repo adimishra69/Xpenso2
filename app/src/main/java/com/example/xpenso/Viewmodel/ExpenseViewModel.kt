@@ -1,4 +1,4 @@
-package com.example.xpenso.ExpenseViewmodel
+package com.example.xpenso.Viewmodel
 
 
 import android.app.Application
@@ -38,8 +38,11 @@ enum class ExportType {
 
 class ExpenseViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val database = ExpenseDatabase.getDatabase(application)
+
     private val repository: ExpenseRepository = ExpenseRepository(
-        ExpenseDatabase.getDatabase(application).expenseDao()
+        database.expenseDao(),
+        database.budgetDao()
     )
 
     private val settingsStore = SettingsStore(application)
@@ -67,6 +70,9 @@ private val useCases = ExpenseUseCases(
 
     private val _selectedMonth = MutableStateFlow(Calendar.getInstance().get(Calendar.MONTH))
     private val _selectedYear = MutableStateFlow(Calendar.getInstance().get(Calendar.YEAR))
+
+    val selectedMonth = _selectedMonth.asStateFlow()
+    val selectedYear = _selectedYear.asStateFlow()
 
 
     private val _isInitialLoadComplete = MutableStateFlow(false)
@@ -216,7 +222,8 @@ fun updateExpense(
 
     fun deleteAllData() {
         viewModelScope.launch {
-        repository.deleteAllExpenses()
+            repository.deleteAllExpenses()
+            repository.deleteAllBudgets()
         }
     }
 

@@ -36,6 +36,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -111,14 +112,15 @@ fun TransactionItem(
             // ── Title + meta ──────────────────────────────────────
             Column(Modifier.weight(1f)) {
 
-                Text(
-                    text     = expense.title,
-                    style    = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = (-0.2).sp,
-                    color    = onSurface,
-                    maxLines = 1
-                )
+                        Text(
+                            text = expense.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = (-0.2).sp,
+                            color = onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
 
                 Spacer(Modifier.height(4.dp))
 
@@ -161,7 +163,9 @@ fun TransactionItem(
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 11.sp,
                         color = onSurfaceVar.copy(alpha = 0.38f),
-                        letterSpacing = 0.sp
+                        letterSpacing = 0.sp,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                 }
             }

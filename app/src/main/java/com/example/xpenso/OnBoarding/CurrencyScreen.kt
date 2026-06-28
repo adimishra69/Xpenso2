@@ -17,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -85,31 +86,21 @@ fun CurrencyScreen(
                             "Change Currency",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
+                                fontSize = 18.sp ,
                                 letterSpacing = (-0.3).sp
                             )
                         )
                     },
                     navigationIcon = {
                         IconButton(onClick = { onBack?.invoke() }) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                                        RoundedCornerShape(10.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
+
                                 Icon(
                                     Icons.Default.ArrowBack,
                                     contentDescription = "Back",
-                                    modifier = Modifier.size(18.dp),
+                                    modifier = Modifier.size(21.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            }
+
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -257,10 +248,11 @@ fun CurrencyScreen(
 
                         else -> {
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(filteredList) { currency ->
+                                itemsIndexed(filteredList) { index ,currency ->
                                     CurrencyRow(
                                         currency = currency,
                                         selected = currency == selectedCurrency,
+                                        isLastItem = index == filteredList.lastIndex,
                                         onClick = {
                                             focusManager.clearFocus()
                                             onSelect(currency)
@@ -344,6 +336,7 @@ fun CurrencyScreen(
 fun CurrencyRow(
     currency: CurrencyItem,
     selected: Boolean,
+    isLastItem: Boolean ,
     onClick: () -> Unit
 ) {
     val backgroundColor by animateColorAsState(
@@ -471,9 +464,15 @@ fun CurrencyRow(
         }
     }
 
-    HorizontalDivider(
-        thickness = 0.5.dp,
-        modifier = Modifier.padding(horizontal = 4.dp),
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)
-    )
+    // Show divider only if this is NOT the last item
+    if (!isLastItem) {
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            modifier = Modifier.padding(
+                start = 60.dp,   // starts after the currency symbol box
+                end = 9.dp      // leaves some space on the right
+            ),
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)
+        )
+    }
 }

@@ -11,15 +11,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Backspace
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Backspace
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -254,6 +259,7 @@ fun PinSetupDialog(
     var confirmPin by remember { mutableStateOf("") }
     var shakeError by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
+    var showPin by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
 
@@ -380,7 +386,24 @@ fun PinSetupDialog(
                     }
                 }
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(30.dp))
+
+                TextButton(
+                    onClick = { showPin = !showPin }
+                ) {
+                    Icon(
+                        imageVector = if (showPin)
+                            Icons.Default.VisibilityOff
+                        else
+                            Icons.Default.Visibility,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+
+                    Spacer(Modifier.width(6.dp))
+
+                    Text(if (showPin) "Hide PIN" else "Show PIN")
+                }
 
                 // ── Step Indicator ──
                 Row(
@@ -435,7 +458,8 @@ fun PinSetupDialog(
                         onPinChange = onPinChange,
                         shakeOffset = if (currentStep == PinStep.CONFIRM) shakeOffset else 0f,
                         isSuccess = showSuccess,
-                        isError = shakeError
+                        isError = shakeError,
+                        showPin = showPin
                     )
                 }
 
@@ -521,6 +545,7 @@ private fun PinDotRow(
     shakeOffset: Float = 0f,
     isSuccess: Boolean = false,
     isError: Boolean = false,
+    showPin: Boolean = false,
     length: Int = 6
 ) {
     // Hidden text field for input
@@ -607,17 +632,33 @@ private fun PinDotRow(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .scale(dotScale)
-                            .graphicsLayer { alpha = dotAlpha }
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isError) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.primary
+                    if (isFilled) {
+                        if (showPin) {
+                            Text(
+                                text = pin[index].toString(),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isError)
+                                    MaterialTheme.colorScheme.error
+                                else
+                                    MaterialTheme.colorScheme.primary
                             )
-                    )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .scale(dotScale)
+                                    .graphicsLayer { alpha = dotAlpha }
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isError)
+                                            MaterialTheme.colorScheme.error
+                                        else
+                                            MaterialTheme.colorScheme.primary
+                                    )
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -640,8 +681,18 @@ private fun InlineNumpad(
         listOf("7", "8", "9"),
         listOf("", "0", "⌫")
     )
-
+    val interactionSource = remember { MutableInteractionSource() }
     val haptic = LocalHapticFeedback.current
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioMediumBouncy
+        ),
+        label = "numpadScale"
+    )
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -659,17 +710,20 @@ private fun InlineNumpad(
                             val isDelete = key == "⌫"
                             val interactionSource = remember { MutableInteractionSource() }
 
+
                             Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .scale(scale)
                                     .height(56.dp)
+                                    .clip(RoundedCornerShape(14.dp))
                                     .clickable(
                                         interactionSource = interactionSource,
-                                        indication = null,
+                                        indication = ripple(),
                                         enabled = enabled
                                     ) {
 
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        haptic.performHapticFeedback(HapticFeedbackType.KeyboardTap)
                                         if (isDelete) {
                                             if (pin.isNotEmpty()) onPinChange(pin.dropLast(1))
                                         } else {
@@ -681,16 +735,24 @@ private fun InlineNumpad(
                                     MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
                                 else
                                     MaterialTheme.colorScheme.surfaceVariant,
-                                tonalElevation = 0.dp
+                                tonalElevation = if (isPressed) 1.dp else 0.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = key,
-                                        fontSize = if (isDelete) 18.sp else 22.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (isDelete) MaterialTheme.colorScheme.error
-                                        else MaterialTheme.colorScheme.onSurface
-                                    )
+                                    if (isDelete) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Backspace,
+                                            contentDescription = "Delete",
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    } else {
+                                        Text(
+                                            text = key,
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
                                 }
                             }
                         }

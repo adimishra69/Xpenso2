@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,27 +13,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.xpenso.AppStart.AnalyticsHelper
 import com.example.xpenso.Transaction.CustomRangeDialog
-import com.example.xpenso.Transaction.CustomDatePickerDialog
 import com.example.xpenso.utils.AppHeaderBar
 import android.content.Intent
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.core.content.FileProvider
 import com.example.xpenso.AddExpenses.CategoryBottomSheet
-import com.example.xpenso.Reports.YearPickerDialog
-import com.example.xpenso.Reports.ExportActionDialog
-import com.example.xpenso.ExpenseViewmodel.BackupRestoreState
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
-import com.example.xpenso.ExpenseViewmodel.ExportType
+import com.example.xpenso.Viewmodel.BackupRestoreState
+import com.example.xpenso.Viewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.ExportType
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.Transaction.ExpenseCategory
 import com.example.xpenso.utils.PremiumDatePickerDialog
@@ -61,6 +51,7 @@ fun ReportsScreen(
     onPremiumRequired: () -> Unit,
     onBack: () -> Unit
 ) {
+
     val context = LocalContext.current
     val isPremium by settingsStore.isPremium.collectAsState(initial = false)
     val startOfMonth by settingsStore.startOfMonth.collectAsState(initial = 1)
@@ -136,6 +127,7 @@ fun ReportsScreen(
             )
         }
     }
+
     LaunchedEffect(Unit) {
         AnalyticsHelper.trackScreen("Reports")
     }
@@ -194,7 +186,6 @@ fun ReportsScreen(
                 }
             )
 
-
             ReportItem(
                 icon = Icons.Default.CalendarMonth,
                 title = "Yearly Financial Report",
@@ -207,6 +198,7 @@ fun ReportsScreen(
                      }
                 }
             )
+
             ReportItem(
                 icon = Icons.Default.BarChart,
                 title = "Monthly Category Breakdown",
@@ -426,8 +418,9 @@ fun ReportsScreen(
             onStartClick = { showStartDatePicker = true },
             onEndClick = { showEndDatePicker = true },
             onApply = {
+                val adjustedEndDate = endDate!! + 86_399_999L
                 if (startDate != null && endDate != null) {
-                    val hasDataInRange = expenseViewModel.allExpenses.value.any { it.timestamp in startDate!!..endDate!! }
+                    val hasDataInRange = expenseViewModel.allExpenses.value.any { it.timestamp in startDate!!..adjustedEndDate }
                     if (hasDataInRange) {
                         selectedCustomRange = startDate!! to endDate!!
                         showCustomRangePicker = false
@@ -466,82 +459,6 @@ fun ReportsScreen(
     }
 }
 
-@Composable
-fun ReportItem(icon: ImageVector,
-               title: String,
-               subtitle: String,
-               locked: Boolean = false,
-               onClick: () -> Unit
-){
-    val haptic = LocalHapticFeedback.current // ✅ ADD THIS
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        tonalElevation = if (locked) 0.dp else 2.dp,
-        onClick = {
-            if (locked) {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            }
-            onClick()
-        }
-    ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = RoundedCornerShape(14.dp),
-                color = if (locked)
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-                else
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, null,
-                    modifier = Modifier.size(24.dp),
-                    tint = if (locked) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.primary) }
-            }
-
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (locked) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface)
-                Text(subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 16.sp)
-            }
-            if (!locked) Icon(Icons.Default.ChevronRight,
-                null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-
-        }
-    }
-}
-
-@Composable
-fun SectionHeader(title: String) {
-    Text(
-        text = title.uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.Bold, letterSpacing = 1.sp,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
-}
-
-fun fileSafeDateTime(
-    millis: Long = System.currentTimeMillis()
-): String {
-    val format = java.text.SimpleDateFormat(
-        "ddMMyy_HHmmss",
-        java.util.Locale.getDefault()
-    )
-
-    return format.format(java.util.Date(millis))
-}
 private fun shareReport(
     request: ExportRequest,
     context: Context,

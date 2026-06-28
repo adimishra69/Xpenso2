@@ -117,7 +117,7 @@ fun TotalYearlyExpenseCard(
                     // 🔹 Currency — always smaller relative to amount
                     withStyle(
                         SpanStyle(
-                            fontSize = (baseSize * scaleFactor * 0.65f),
+                            fontSize = (baseSize * scaleFactor * 0.75f),
                             fontWeight = FontWeight.Medium
                         )
                     ) {

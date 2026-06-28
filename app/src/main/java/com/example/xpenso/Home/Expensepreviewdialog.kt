@@ -146,7 +146,7 @@ fun ExpensePreviewDialog(
                     .pointerInput(Unit) {
                         detectVerticalDragGestures(
                             onDragEnd = {
-                                if (offsetY.value > 100f) {
+                                if (offsetY.value > 150f) {
                                     animateDismiss()
                                 } else {
                                     scope.launch {

@@ -1,6 +1,8 @@
 package com.example.xpenso.AddExpenses
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -48,27 +50,22 @@ fun AmountSection(
     val shakeOffset = remember { Animatable(0f) }
     var isFirstLoad by remember { mutableStateOf(true) }
 
+    // ─── Variant 1 · Gentle (refined / subtle) ─────────────────────
     LaunchedEffect(shakeTrigger) {
+        if (isFirstLoad) { isFirstLoad = false; return@LaunchedEffect }
 
-        if (isFirstLoad) {
-            isFirstLoad = false
-            return@LaunchedEffect
-        }
+        val easeInOut = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
+        val spring    = CubicBezierEasing(0.15f, 1f, 0.35f, 1f)
 
-        shakeOffset.animateTo(
-            -6f,
-            animationSpec = tween(35)
-        )
+        suspend fun move(to: Float, ms: Int, ease: Easing = easeInOut) =
+            shakeOffset.animateTo(to, tween(ms, easing = ease))
 
-        shakeOffset.animateTo(
-            6f,
-            animationSpec = tween(35)
-        )
-
-        shakeOffset.animateTo(
-            0f,
-            animationSpec = tween(35)
-        )
+        move(-4f,  80)
+        move( 5f,  80)
+        move(-3.5f,70)
+        move( 2f,  65)
+        move(-1f,  60)
+        move( 0f, 130, spring)   // smooth spring settle
     }
 
     val fontSize = when (displayText.length) {

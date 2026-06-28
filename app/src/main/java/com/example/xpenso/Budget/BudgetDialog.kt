@@ -1,5 +1,6 @@
 package com.example.xpenso.Budget
 
+import android.R.attr.shape
 import com.example.Home.AmountTextField
 import com.example.Home.AmountFieldState
 import com.example.Home.validateAmount
@@ -10,7 +11,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -28,7 +31,10 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.Home.AmountTextField
@@ -41,7 +47,9 @@ fun BudgetDialog(
     currencySymbol : String,
     onDismiss: () -> Unit,
     onSave: (Double) -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    previousMonthAmount: Double? = null,
+    previousMonthIndex: Int? = null,
 ) {
     var textValue by remember {
         mutableStateOf(
@@ -51,6 +59,10 @@ fun BudgetDialog(
                 ?: ""
         )
     }
+
+    val monthName = previousMonthIndex?.let {
+        java.text.DateFormatSymbols().months[it]
+    } ?: ""
 
     var shakeTrigger by remember { mutableIntStateOf(0) }
     val haptic = LocalHapticFeedback.current
@@ -119,6 +131,67 @@ fun BudgetDialog(
                 )
 
                 Spacer(Modifier.height(20.dp))
+                val shape = RoundedCornerShape(12.dp)
+
+                if (!isEditMode && previousMonthAmount != null && previousMonthAmount > 0) {
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                        ),
+
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .padding(vertical = 6.dp) // ✅ OUTSIDE spacing
+                        .clip(shape)              // ✅ clip AFTER padding
+                        .clickable {
+                            textValue = String.format(
+                                Locale.getDefault(),
+                                "%.2f",
+                                previousMonthAmount
+                            )
+                        }
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            text = buildAnnotatedString {
+
+                                append("Use last budget (")
+
+                                // 🔥 Currency (smaller + lighter)
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontSize = (MaterialTheme.typography.labelLarge.fontSize.value - 2).sp,
+                                        fontWeight = FontWeight.Normal
+                                    )
+                                ) {
+                                    append(currencySymbol)
+                                }
+
+                                // 🔥 Amount (normal)
+                                append(previousMonthAmount.toInt().toString())
+
+                                append(" • ")
+
+                                // 🔥 Month (slightly faded)
+                                withStyle(
+                                    style = SpanStyle(
+                                    )
+                                ) {
+                                    append(monthName)
+                                }
+
+                                append(")")
+                            },
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
 
                 // Amount input
                 AmountTextField(

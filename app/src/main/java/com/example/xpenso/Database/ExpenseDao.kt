@@ -39,6 +39,9 @@ interface ExpenseDao {
     @Query("DELETE FROM expenses")
     suspend fun deleteAllExpenses()
 
+    @Query("DELETE FROM budgets")
+    suspend fun deleteAllBudgets()
+
     @Query("SELECT COUNT(*) FROM expenses")
     suspend fun getExpenseCount(): Int
 

@@ -29,14 +29,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
-import com.example.xpenso.PremiumHandler.PremiumFeatureSheet
+import com.example.xpenso.Viewmodel.ExpenseViewModel
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.utils.AppTopBar
 import com.example.xpenso.utils.PremiumDatePickerDialog
-import kotlinx.coroutines.delay
 
 enum class TransactionFilter(val label: String) {
     ALL("All"),

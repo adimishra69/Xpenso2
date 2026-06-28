@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
             notificationManager.cancelAll()
 
             val themeMode by settingsStore.themeMode.collectAsState(initial = 0)
-//            val colorStyle by settingsStore.colorStyle.collectAsState(initial = 1)
+            val colorStyle by settingsStore.colorStyle.collectAsState(initial = 0)
 
             val darkTheme = when (themeMode) {
                 1 -> false
@@ -73,6 +73,7 @@ class MainActivity : ComponentActivity() {
             XpensoTheme(
                 darkTheme = darkTheme,
 //                dynamicColor = colorStyle == 1
+                colorStyle = colorStyle
             ) {
                 AppRoot(
                     settingsStore = settingsStore,

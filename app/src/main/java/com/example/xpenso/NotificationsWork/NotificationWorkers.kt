@@ -23,16 +23,18 @@ class AddExpenseReminderWorker(
         return try {
 
             val db = ExpenseDatabase.getDatabase(context)
-            val settingsStore = SettingsStore(context)
+
             val allExpenses = db.expenseDao().getAllExpenses().first()
 
             val now = Calendar.getInstance()
 
-            val monthlyBudget = settingsStore
-                .getMonthlyBudget(
-                    now.get(Calendar.MONTH),
-                    now.get(Calendar.YEAR)
-                ).first()
+            val currentMonth = now.get(Calendar.MONTH)
+            val currentYear = now.get(Calendar.YEAR)
+
+            val budget = db.budgetDao()
+                .getBudget(currentMonth, currentYear)
+
+            val monthlyBudget = budget?.amount ?: 0.0
 
             val dailyTotal = allExpenses.filter { expense ->
                 val cal = Calendar.getInstance().apply {
@@ -85,7 +87,7 @@ class AddExpenseReminderWorker(
 
 
             // 8 PM — Expense Reminder
-            if (type == "add_expense_reminder_8pm" && monthlyBudget > 0 && dailyTotal == 0.0) {
+           else if (type == "add_expense_reminder_8pm" && monthlyBudget > 0 && dailyTotal == 0.0) {
 
                 val notification =
                     NotificationCompat.Builder(

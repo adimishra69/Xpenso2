@@ -1,28 +1,21 @@
 package com.example.xpenso.Settings
 
 import android.Manifest.permission.POST_NOTIFICATIONS
-import android.R.attr.fontWeight
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalContext
@@ -33,7 +26,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,17 +34,15 @@ import com.example.xpenso.NotificationsWork.ReminderScheduler
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.xpenso.ExpenseViewmodel.BackupRestoreState
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.BackupRestoreState
+import com.example.xpenso.Viewmodel.ExpenseViewModel
 import com.example.xpenso.PremiumHandler.PremiumFeatureSheet
 import com.example.xpenso.PremiumHandler.PremiumUpgradeCard
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.utils.AppTopBar
 import kotlinx.coroutines.launch
-import java.util.jar.Manifest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -303,11 +293,11 @@ fun SettingsScreen(
                                         }
                                     }
                                 }
-//                                ColorStyleSetting(
-//                                    colorStyle = colorStyle,
-//                                    settingsStore = settingsStore,
-//                                    scope = scope
-//                                )
+                                ColorStyleSetting(
+                                    colorStyle = colorStyle,
+                                    settingsStore = settingsStore,
+                                    scope = scope
+                                )
                             }
                             // ... existing Screen Mode SingleChoiceSegmentedButtonRow ends here ...
 
@@ -402,15 +392,15 @@ fun SettingsScreen(
 //                            }
                             val title =
                                 if (isNotificationEnabled)
-                                    "Daily Reminder Enabled"
+                                    "Reminders Active"
                                 else
-                                    "Enable Daily Reminder"
+                                    "Enable Reminders"
 
-                            val subtitle =
+                             val subtitle =
                                 if (isNotificationEnabled)
-                                    "Tap to manage notification settings"
+                                    "One reminder every 2–3 days"
                                 else
-                                    "Notifications disabled"
+                                    "Get an occasional reminder"
 
                             val icon =
                                 if (isNotificationEnabled)
@@ -544,13 +534,13 @@ fun SettingsScreen(
 
                 DataManagementDialogs(
                     expenseViewModel = expenseViewModel,
-                    isPremium = isPremium,
-                    onNavigateToPremium = {
-                        premiumMessage = "PDF export is available in Xpenso Premium"
-                        showPremiumSheet = true
-                    },
-                    showBackup = showBackupDialog,
-                    onDismissBackup = { showBackupDialog = false },
+//                    isPremium = isPremium,
+//                    onNavigateToPremium = {
+//                        premiumMessage = "PDF export is available in Xpenso Premium"
+//                        showPremiumSheet = true
+//                    },
+//                    showBackup = showBackupDialog,
+//                    onDismissBackup = { showBackupDialog = false },
                     showRestore = showRestoreDialog,
                     onDismissRestore = { showRestoreDialog = false }
                 )
@@ -560,6 +550,7 @@ fun SettingsScreen(
                     AlertDialog(
                         onDismissRequest = { showStartOfMonthDialog = false },
                         shape = RoundedCornerShape(24.dp),
+                        containerColor = MaterialTheme.colorScheme.surface,
 
                         title = {
                             Text(
@@ -575,7 +566,7 @@ fun SettingsScreen(
                                 tonalElevation = 2.dp,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(max = 400.dp)
+                                    .heightIn(max = 400.dp),
                             ) {
 
                                 Column(
@@ -649,12 +640,23 @@ fun SettingsScreen(
                             scope.launch {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 settingsStore.clearAll()
-                                expenseViewModel.deleteAllData()
-                                Toast.makeText(
-                                    context,
-                                    "Data deleted successfully!",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                try {
+                                    expenseViewModel.deleteAllData()
+
+                                    Toast.makeText(
+                                        context,
+                                        "Data deleted Successfully!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                } catch (e: Exception) {
+
+                                    Toast.makeText(
+                                        context,
+                                        e.message,
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
                             }
                         },
                         onDismiss = { showClearDataDialog = false }

@@ -8,17 +8,16 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.xpenso.Budget.YearlyBudgetInsightsScreen
 import com.example.xpenso.Database.ExpenseEntity
 import com.example.xpenso.utils.BottomTab
-import com.example.xpenso.ExpenseViewmodel.BackupRestoreState
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
-import com.example.xpenso.ExpenseViewmodel.ExportType
+import com.example.xpenso.Viewmodel.BackupRestoreState
+import com.example.xpenso.Viewmodel.BudgetViewModel
+import com.example.xpenso.Viewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.ExportType
 import com.example.xpenso.Home.ExpenseDialog
 import com.example.xpenso.OnBoarding.OnboardingScreen
 import com.example.xpenso.PremiumHandler.PremiumActivationScreen
 import com.example.xpenso.PremiumHandler.PremiumFeatureSheet
-import com.example.xpenso.PremiumHandler.PremiumActivationScreen
 import com.example.xpenso.PremiumHandler.PremiumDetailsScreen
 import com.example.xpenso.Reports.ReportsScreen
 import com.example.xpenso.Settings.AboutScreen
@@ -42,6 +41,8 @@ fun MainScreen(
 
 
     val expenseViewModel: ExpenseViewModel = viewModel()
+    val budgetViewModel: BudgetViewModel = viewModel()
+
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val startOfMonth by settingsStore.startOfMonth.collectAsState(initial = 1)
@@ -453,6 +454,7 @@ fun MainScreen(
                     paymentMode,
                     category.name,
                     notes
+
                 )
 
                 showEditExpense = false
@@ -497,8 +499,10 @@ fun MainScreen(
             currencySymbol = currencySymbol,
             settingsStore = settingsStore,
             expenseViewModel = expenseViewModel,
+            budgetViewModel = budgetViewModel,
 //            onNavigateToNotifications = { showNotificationHistory = true },
             onNavigateToPremium = { showPremiumDetails = true },
+            DirectPremium = { showPremiumActivation  = true},
             onNavigateToSecurity = { showSecuritySettings = true },
             onNavigateToAbout = { showAbout = true },
             onChangeCurrency = { isChangingCurrency = true },
@@ -555,8 +559,8 @@ fun MainScreen(
             onDismiss = { showPremiumSheet = false },
             onUpgradeClick = {
                 showPremiumSheet = false
-//                showPremiumActivation = true
-                showPremiumDetails = true
+                showPremiumActivation = true
+//                showPremiumDetails = true
             }
 
         )

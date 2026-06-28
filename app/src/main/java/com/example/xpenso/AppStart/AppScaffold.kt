@@ -1,6 +1,5 @@
 package com.example.xpenso.AppStart
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
@@ -8,11 +7,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -25,16 +22,14 @@ import com.example.xpenso.*
 import com.example.xpenso.R
 import com.example.xpenso.Budget.BudgetScreen
 import com.example.xpenso.Database.ExpenseEntity
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
-import com.example.xpenso.Home.ExpenseDialog
+import com.example.xpenso.Viewmodel.BudgetViewModel
+import com.example.xpenso.Viewmodel.ExpenseViewModel
 import com.example.xpenso.Home.HomeScreen
 import com.example.xpenso.InsightsModel.InsightsScreen
 import com.example.xpenso.Settings.SettingsScreen
 import com.example.xpenso.Transaction.TransactionFilter
 import com.example.xpenso.Transaction.TransactionScreen
 import com.example.xpenso.utils.BottomTab
-import com.example.xpenso.utils.formatAmountTwoDecimal
-import com.example.xpenso.utils.mergeDateWithCurrentTime
 
 @Composable
 fun AppScaffold(
@@ -43,6 +38,8 @@ fun AppScaffold(
     currencySymbol: String,
     settingsStore: SettingsStore,
     expenseViewModel: ExpenseViewModel,
+    DirectPremium: () -> Unit,
+    budgetViewModel: BudgetViewModel,
 //    onYearlyBudgetClick: () -> Unit,
     // Navigation Callbacks
     onAddExpenseClick: () -> Unit,
@@ -215,6 +212,7 @@ fun AppScaffold(
                     currencySymbol = currencySymbol,
                     settingsStore = settingsStore,
                     expenseViewModel = expenseViewModel,
+                    budgetViewModel = budgetViewModel,
                     onAddExpense = {
                         onAddExpenseClick()
                     },
@@ -245,15 +243,17 @@ fun AppScaffold(
                     currencySymbol = currencySymbol,
                     expenseViewModel = expenseViewModel,
                     settingsStore = settingsStore,
+                    budgetViewModel = budgetViewModel,
                     onCategoryClick = onCategoryClick,
-                    onNavigateToPremium = onNavigateToPremium
+                   DirectPremium = DirectPremium
                 )
 
                 BottomTab.BUDGETS -> BudgetScreen(
                     currencySymbol,
                     settingsStore,
                     expenseViewModel,
-//                    onYearlyBudgetClick
+//                    onYearlyBudgetClick,
+                    budgetViewModel = budgetViewModel
                 )
 
                 BottomTab.SETTINGS -> SettingsScreen(

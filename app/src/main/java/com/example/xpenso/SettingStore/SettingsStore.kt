@@ -22,6 +22,7 @@ class SettingsStore(private val context: Context) {
 
     private val gson = Gson()
 
+//    Preferences.Key<Boolean>
     companion object {
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val CURRENCY_SYMBOL = stringPreferencesKey("currency_symbol")
@@ -49,7 +50,7 @@ class SettingsStore(private val context: Context) {
     val analyticsEnabled: Flow<Boolean> = context.dataStore.data.map { it[ANALYTICS_ENABLED] ?: true }
     val themeMode: Flow<Int> = context.dataStore.data.map { it[THEME_MODE] ?: 0 }
     val colorStyle: Flow<Int> = context.dataStore.data.map { preferences ->
-        preferences[COLOR_STYLE_KEY] ?: 1 // Default to 0 (Material You)
+        preferences[COLOR_STYLE_KEY] ?: 0 // Default to 0 (Material You)
     }
     val screenMode: Flow<Int> = context.dataStore.data.map { it[SCREEN_MODE] ?: 1 }
     val startOfMonth: Flow<Int> = context.dataStore.data.map { it[START_OF_MONTH] ?: 1 }
@@ -121,23 +122,23 @@ class SettingsStore(private val context: Context) {
     }
 
 
-    suspend fun clearNotificationCount() {
-        context.dataStore.edit { preferences ->
-            preferences[NOTIFICATION_COUNT] = 0
-        }
-    }
+//    suspend fun clearNotificationCount() {
+//        context.dataStore.edit { preferences ->
+//            preferences[NOTIFICATION_COUNT] = 0
+//        }
+//    }
 
-    fun getMonthlyBudget(month: Int, year: Int): Flow<Double> {
-        val key = doublePreferencesKey("budget_${month}_${year}")
-        return context.dataStore.data.map { it[key] ?: 0.0 }
-    }
+//    fun getMonthlyBudget(month: Int, year: Int): Flow<Double> {
+//        val key = doublePreferencesKey("budget_${month}_${year}")
+//        return context.dataStore.data.map { it[key] ?: 0.0 }
+//    }
 
-    suspend fun removeMonthlyBudget(month: Int, year: Int) {
-        val key = doublePreferencesKey("budget_${month}_${year}")
-        context.dataStore.edit { preferences ->
-            preferences.remove(key)
-        }
-    }
+//    suspend fun removeMonthlyBudget(month: Int, year: Int) {
+//        val key = doublePreferencesKey("budget_${month}_${year}")
+//        context.dataStore.edit { preferences ->
+//            preferences.remove(key)
+//        }
+//    }
 
 //    suspend fun setNotificationPermissionAsked() {
 //        context.dataStore.edit { it[NOTIFICATION_PERMISSION_ASKED] = true }
@@ -173,9 +174,9 @@ class SettingsStore(private val context: Context) {
     suspend fun saveUseBiometrics(enabled: Boolean) = context.dataStore.edit {
         it[USE_BIOMETRICS] = enabled
     }
-    suspend fun saveMonthlyBudget(month: Int, year: Int, budget: Double) = context.dataStore.edit {
-        it[doublePreferencesKey("budget_${month}_${year}")] = budget
-    }
+//    suspend fun saveMonthlyBudget(month: Int, year: Int, budget: Double) = context.dataStore.edit {
+//        it[doublePreferencesKey("budget_${month}_${year}")] = budget
+//    }
     suspend fun saveStartOfMonth(day: Int) = context.dataStore.edit {
         it[START_OF_MONTH] = day
     }

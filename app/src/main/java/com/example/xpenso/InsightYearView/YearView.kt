@@ -15,11 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.xpenso.AddExpenses.displayName
-import com.example.xpenso.InsightYearView.YearSelector
 import com.example.xpenso.InsightsModel.YearlyInsightStats
 import com.example.xpenso.AppStart.AnalyticsHelper
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.BudgetViewModel
+import com.example.xpenso.Viewmodel.ExpenseViewModel
 import com.example.xpenso.InsightMonthComponents.toDisplayUpper
 import com.example.xpenso.InsightsModel.MonthlySummary
 import com.example.xpenso.SettingsStore
@@ -32,11 +31,13 @@ import java.util.*
 fun YearView(
     currencySymbol: String,
     expenseViewModel: ExpenseViewModel,
-    settingsStore: SettingsStore
+    settingsStore: SettingsStore,
+    budgetViewModel: BudgetViewModel
 ) {
     var selectedYear by remember { mutableStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
     val allExpenses by expenseViewModel.allExpenses.collectAsState(initial = emptyList())
     val startOfMonth by settingsStore.startOfMonth.collectAsState(initial = 1)
+    val allBudgets by budgetViewModel.allBudgets.collectAsState()
 
     LaunchedEffect(Unit) {
         AnalyticsHelper.trackScreen("InsightsYear")
@@ -66,8 +67,11 @@ fun YearView(
 
     // Collect 12 monthly budgets for selected year
     val monthlyBudgets = (0..11).map { monthIndex ->
-        settingsStore.getMonthlyBudget(monthIndex, selectedYear)
-            .collectAsState(initial = 0.0).value
+        allBudgets
+            .firstOrNull {
+                it.month == monthIndex && it.year == selectedYear
+            }
+            ?.amount ?: 0.0
     }
 
     // 🔥 FIXED: Added monthlyBudgets to remember keys so the stats recalculate when budgets load or change
@@ -108,7 +112,10 @@ fun YearView(
                         ?: ExpenseCategory.OTHER
                 }
                 .mapValues { (_, expenses) -> expenses.sumOf { it.amount } }
-                .maxByOrNull { it.value }?.toPair()
+                .toList()
+                .sortedByDescending { it.second }
+                .filter { it.first != ExpenseCategory.OTHER } // 🔥 remove OTHER
+                .firstOrNull() // ✅ takes top valid OR null if none
 
             val yearOverYearChange = if (totalPreviousYearExpense > 0) {
                 ((totalYearlyExpense - totalPreviousYearExpense) / totalPreviousYearExpense) * 100
@@ -189,16 +196,13 @@ fun YearView(
 
             }
         }
-
-        if (hasYearData) {
+        val hasPrevious = yearlyInsightStats.totalPreviousYearExpense != 0.0
+        if (hasYearData && hasPrevious) {
             item {
                 val yoy = yearlyInsightStats.yearOverYearChange ?: 0.0
 
                 val isIncrease = yoy > 0
-                val hasPrevious = yearlyInsightStats.totalPreviousYearExpense != 0.0
-
                 val yoyColor = when {
-                    !hasPrevious -> MaterialTheme.colorScheme.onSurfaceVariant
                     isIncrease -> MaterialTheme.colorScheme.error
                     else -> Color(0xFF4CAF50)
                 }
@@ -207,10 +211,6 @@ fun YearView(
                     icon = Icons.Default.CompareArrows,
                     label = "Year-over-Year",
                     value = buildAnnotatedString {
-
-                        if (!hasPrevious) {
-                            append("No data for ${selectedYear - 1}")
-                        } else {
 
                             val amount = if (isIncrease)
                                 yearlyInsightStats.totalYearlyExpense - yearlyInsightStats.totalPreviousYearExpense
@@ -241,14 +241,15 @@ fun YearView(
                             ) {
                                 append(CurrencyFormatter.format(amount, currencySymbol))
                             }
-                        }
+
                     },
                     valueColor = yoyColor
                 )
 
             }
+        }
 
-            if (selectedYear == Calendar.getInstance().get(Calendar.YEAR)) {
+            if (selectedYear == Calendar.getInstance().get(Calendar.YEAR) && (canShowProjection)) {
                 item {
 
                     LongInsightMetricCard(
@@ -256,7 +257,6 @@ fun YearView(
                         label = "Year Projection",
                         value = buildAnnotatedString {
 
-                            if (canShowProjection) {
 
                                 val projected = yearlyInsightStats.projectedYearlyExpense ?: 0.0
 
@@ -278,24 +278,38 @@ fun YearView(
                                     append(CurrencyFormatter.format(projected, currencySymbol))
                                 }
 
-                            } else {
-                                append("Not enough data")
-                            }
+
                         }
                     )
                 }
             }
 
+        if (hasYearData) {
             item {
                 LongInsightMetricCard(
                     icon = Icons.Default.Autorenew,
                     label = "Avg. Daily Spend",
                     value = buildAnnotatedString {
-                        withStyle(SpanStyle(fontSize = (MaterialTheme.typography.titleLarge.fontSize.value - 4).sp, fontWeight = FontWeight.SemiBold)) {
+                        withStyle(
+                            SpanStyle(
+                                fontSize = (MaterialTheme.typography.titleLarge.fontSize.value - 4).sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        ) {
                             append("$currencySymbol ")
                         }
-                        withStyle(SpanStyle(fontSize = MaterialTheme.typography.titleLarge.fontSize, fontWeight = FontWeight.Bold)) {
-                            append(CurrencyFormatter.format(yearlyInsightStats.averageDailySpending, currencySymbol))
+                        withStyle(
+                            SpanStyle(
+                                fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                                fontWeight = FontWeight.Bold
+                            )
+                        ) {
+                            append(
+                                CurrencyFormatter.format(
+                                    yearlyInsightStats.averageDailySpending,
+                                    currencySymbol
+                                )
+                            )
                         }
                     }
                 )
@@ -342,6 +356,7 @@ fun YearView(
                 )
             }
         }
+
 
         if (!hasYearData) {
             item { YearEmptyState() }

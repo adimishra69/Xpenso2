@@ -13,10 +13,10 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BarChart
 import com.example.xpenso.AppStart.AnalyticsHelper
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.BudgetViewModel
+import com.example.xpenso.Viewmodel.ExpenseViewModel
+import com.example.xpenso.Reports.MonthPickerDialog
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.ui.theme.LocalBudgetColors
 import com.example.xpenso.utils.AppTopBar
@@ -30,25 +30,27 @@ fun BudgetScreen(
     currencySymbol: String,
     settingsStore: SettingsStore,
     expenseViewModel: ExpenseViewModel,
-//    onYearlyClick: () -> Unit
+    budgetViewModel: BudgetViewModel
 ) {
 
     val scope = rememberCoroutineScope()
 
     val isInitialLoadComplete by expenseViewModel.isInitialLoadComplete.collectAsState()
+    val month by expenseViewModel.selectedMonth.collectAsState()
+    val year by expenseViewModel.selectedYear.collectAsState()
+    var showMonthPicker by remember { mutableStateOf(false) }
+    val viewMonth = remember(month, year) {
+        Calendar.getInstance().apply {
+            set(Calendar.MONTH, month)
+            set(Calendar.YEAR, year)
+        }
+    }
 
-    var viewMonth by remember { mutableStateOf(Calendar.getInstance()) }
-    val currentMonth = viewMonth.get(Calendar.MONTH)
-    val currentYear = viewMonth.get(Calendar.YEAR)
 
+    var isNext by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         AnalyticsHelper.trackScreen("Budgets")
-    }
-
-    // --- PASTE THE androidx.compose.runtime.LaunchedEffect HERE ---
-    LaunchedEffect(Unit) {
-        expenseViewModel.updateSelectedMonthAndYear(currentMonth, currentYear)
     }
 
     val currentStartDay by settingsStore.startOfMonth.collectAsState(initial = 1) // Collect the actual setting
@@ -57,15 +59,20 @@ fun BudgetScreen(
         // tell the ViewModel to update its internal _startDay state.
         expenseViewModel.updateStartDay(currentStartDay)
     }
+    LaunchedEffect(month, year) {
+        budgetViewModel.loadBudget(month, year)
+    }
     // --- END PASTE ---
-    val budget by settingsStore.getMonthlyBudget(currentMonth, currentYear)
-        .collectAsState(initial = 0.0)
+//    val budget by settingsStore.getMonthlyBudget(month, year)
+//        .collectAsState(initial = 0.0)
+
+    val budget by budgetViewModel.currentBudget.collectAsState()
 
     val spentInSelectedMonth by expenseViewModel.currentMonthSpent.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
 
-    val selectedMonthYearDisplay = remember(viewMonth) {
+    val selectedMonthYearDisplay = remember(month, year) {
         SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(viewMonth.time)
     }
 
@@ -189,30 +196,63 @@ fun BudgetScreen(
                     budgetStatusColor = budgetStatusColor,
                     progressColor = progressColor,
                     showDialog = showDialog,
+                    onMonthClick = {
+                        showMonthPicker = true
+                    },
                     onPrevMonth = {
+                        isNext = false
                         val newCal = viewMonth.clone() as Calendar
                         newCal.add(Calendar.MONTH, -1)
-                        viewMonth = newCal
                         expenseViewModel.updateSelectedMonthAndYear(
                             newCal.get(Calendar.MONTH),
                             newCal.get(Calendar.YEAR)
                         )
                     },
                     onNextMonth = {
+                        isNext = true
                         val newCal = viewMonth.clone() as Calendar
                         newCal.add(Calendar.MONTH, 1)
-                        viewMonth = newCal
+
                         expenseViewModel.updateSelectedMonthAndYear(
                             newCal.get(Calendar.MONTH),
                             newCal.get(Calendar.YEAR)
                         )
                     },
+                    isNext = isNext,
                     onEditBudget = { showDialog = true },
                     onSetBudget = { showDialog = true },
                     expenseViewModel = expenseViewModel
                 )
             }
         }
+    }
+
+    var lastAvailableBudget by remember { mutableStateOf<Double?>(null) }
+    var lastBudgetMonth by remember { mutableStateOf<Int?>(null) }
+    var lastBudgetYear by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(month, year) {
+        val tempCal = viewMonth.clone() as Calendar
+
+        var found: Double? = null
+
+        for (i in 0 until 24) {
+            tempCal.add(Calendar.MONTH, -1)
+
+            val m = tempCal.get(Calendar.MONTH)
+            val y = tempCal.get(Calendar.YEAR)
+
+            val value = budgetViewModel.getBudget(m, y)
+
+            if (value > 0) {
+                found = value
+                lastBudgetMonth = m
+                lastBudgetYear = y
+                break
+            }
+        }
+
+        lastAvailableBudget = found
     }
     // ================= DIALOG =================
 
@@ -224,15 +264,37 @@ fun BudgetScreen(
             onDismiss = { showDialog = false },
             onSave = { newBudget ->
                 scope.launch {
-                    settingsStore.saveMonthlyBudget(currentMonth, currentYear, newBudget)
+                    budgetViewModel.saveBudget(month, year, newBudget)
                     showDialog = false
                 }
             },
             onRemove = {
                 scope.launch {
-                    settingsStore.removeMonthlyBudget(currentMonth, currentYear)
+                    budgetViewModel.deleteBudget(month, year)
                     showDialog = false
                 }
+            },
+
+            previousMonthAmount = lastAvailableBudget,
+            previousMonthIndex = lastBudgetMonth
+
+        )
+    }
+    if (showMonthPicker) {
+        MonthPickerDialog(
+            selectedMonth = viewMonth.get(Calendar.MONTH),
+            selectedYear = viewMonth.get(Calendar.YEAR),
+
+            onDismiss = {
+                showMonthPicker = false
+            },
+
+            onMonthSelected = { month, year ->
+
+
+                expenseViewModel.updateSelectedMonthAndYear(month, year)
+
+                showMonthPicker = false
             }
         )
     }

@@ -16,6 +16,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,14 +36,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material3.ButtonDefaults
@@ -66,7 +63,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.ExpenseViewModel
 import com.example.xpenso.ui.components.AmountText
 import com.example.xpenso.ui.components.AmountTextStyle
 import com.example.xpenso.ui.components.BudgetStatusCard
@@ -90,6 +87,8 @@ fun BudgetContent(
     budgetStatusColor: Color,
     progressColor: Color,
     showDialog: Boolean,
+    isNext: Boolean,
+    onMonthClick: () -> Unit,
     onPrevMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onEditBudget: () -> Unit,
@@ -167,15 +166,45 @@ fun BudgetContent(
                     }
                 }
 
-                Text(
-                    text = selectedMonthYearDisplay,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.15.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.69f),
+                            shape = RoundedCornerShape(14.dp)
+                        )
+                        .clickable {
+                            onMonthClick()
+                        }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    AnimatedContent(
+                        targetState = selectedMonthYearDisplay,
+                        transitionSpec = {
+                            if (isNext) {
+                                slideInVertically { it } + fadeIn() togetherWith
+                                        slideOutVertically { -it } + fadeOut()
+                            } else {
+                                slideInVertically { -it } + fadeIn() togetherWith
+                                        slideOutVertically { it } + fadeOut()
+                            }
+                        }
+                    ) { targetText ->
 
+                        Text(
+                            text = targetText,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 0.15.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
                 // Next button — subtle tonal pill
                 Surface(
                     shape = CircleShape,
@@ -267,14 +296,28 @@ fun BudgetContent(
                                                 shape = CircleShape
                                             )
                                     )
-                                    Text(
-                                        text = selectedMonthYearDisplay,
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Medium,
-                                            letterSpacing = 0.4.sp
-                                        ),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    AnimatedContent(
+                                        targetState = selectedMonthYearDisplay,
+                                        transitionSpec = {
+                                            if (isNext) {
+                                                slideInVertically { it } + fadeIn() togetherWith
+                                                        slideOutVertically { -it } + fadeOut()
+                                            } else {
+                                                slideInVertically { -it } + fadeIn() togetherWith
+                                                        slideOutVertically { it } + fadeOut()
+                                            }
+                                        }
+                                    ) { targetText ->
+
+                                        Text(
+                                            text = targetText,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Medium,
+                                                letterSpacing = 0.4.sp
+                                            ),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
 
@@ -655,13 +698,13 @@ fun BudgetContent(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 when {
-                    budgetState <= 0 && spentState == 0.0 -> {
-                        CommonNoBudgetView(
-                            icon = Icons.Default.BarChart,
-                            title = "No spending yet",
-                            description = "You haven't used your budget this month\nA great start!",
-                        )
-                    }
+//                    budgetState <= 0 && spentState == 0.0 -> {
+//                        CommonNoBudgetView(
+//                            icon = Icons.Default.BarChart,
+//                            title = "No spending yet",
+//                            description = "You haven't used your budget this month\nA great start!",
+//                        )
+//                    }
 
                     budgetState <= 0 && spentState > 0.0 -> {
                         CommonNoBudgetView(

@@ -121,16 +121,7 @@ enum class ExpenseCategory(
             "night dress", "innerwear", "underwear", "bra", "vest",
             "mall", "shopping mall", "cloth",
             "fabric", "cloth shop", "darji", "silai",
-            "shopping", "shop",
-
-//            "gift", "present",
-//            "birthday gift",
-//            "anniversary gift",
-//            "wedding gift",
-//            "gift purchase",
-//            "gift item",
-//            "return gift",
-//            "surprise gift",
+            "shopping", "shop", "blinkit",
 
             "gold", "silver",
             "jewellery", "jewelry",
@@ -168,7 +159,6 @@ enum class ExpenseCategory(
             "school bag", "lunch box",
             "toys", "toy",
             "crayons", "color pencils",
-            "notebook", "books",
 
 
             // ✂️ tailoring
@@ -183,6 +173,11 @@ enum class ExpenseCategory(
             "bag", "handbag", "wallet", "purse", "belt",
             "cap", "hat", "sunglasses", "spectacles",
             "watch", "smartwatch",
+            "sports shoes", "football shoes", "studs",
+            "jersey", "cricket bat", "cricket ball",
+            "football", "cricket", "badminton racket",
+            "gym wear", "sports wear", "nike", "adidas",
+            "puma", "decathlon",
 
             // 🧣 fashion items
             "scarf", "shawl", "dupatta",
@@ -255,7 +250,7 @@ enum class ExpenseCategory(
             "interest", "bank interest" , "Redeem code" ,
             "bank penalty", "late fee", "money",
             "loan emi", "credit card bill",
-            "credit card payment" ,
+            "credit card payment" , "jio" , "vi" , "airtel", "bsnl",
             "gas", "gas bill", "gas cylinder",
             "lpg", "lpg cylinder", "bharat gas",
             "indane", "hp gas", "gas refill",
@@ -269,10 +264,10 @@ enum class ExpenseCategory(
         Icons.Outlined.School,       // Open book — more academic than School building
         Color(0xFF283593),            // Deep indigo — trust, knowledge, academia
         listOf(
-            "school", "college", "fees", "tuition",
+            "school", "college", "fees", "tuition", "books",
             "coaching", "course", "books", "university", "education",
-            "exam fee", "admission", "semester fee",
-            "lab fee", "library fee", "college fee",
+            "exam fee", "admission", "semester fee", "book",
+            "lab fee", "library fee", "college fee","notebooks","notebook", "books",
             "school fee", "exam registration", "school admission", "college admission",
             "exam form", "study material", "online course",
             "coaching fee", "tuition fee", "study books" , "paper", "notebook", "copy", "copies", "copy book", "copy books",
@@ -282,7 +277,7 @@ enum class ExpenseCategory(
             "print", "printing", "printout", "graduation",
             "xerox", "photocopy", "copy print",
             "spiral binding", "binding" , "spiral",
-            "daycare", "playschool", "nursery",
+            "daycare", "playschool", "nursery", "diary",
             "school fees", "tuition", "udemy" ,
             "udemy subscription", "coursera", "byju", "unacademy", "vedantu",
             "physics wallah" , "project" , "file"
@@ -336,7 +331,7 @@ enum class ExpenseCategory(
             "induction", "induction stove",
             "mixer", "grinder", "juicer" , "cctv", "cctv camera", "security camera",
             "ip camera", "surveillance camera",
-            "dvr", "nvr",
+            "dvr", "nvr", "tempered" , "glass",
             "camera installation", "cctv installation",
             "dishwasher", "chimney",
             "geyser", "water heater",
@@ -359,7 +354,7 @@ enum class ExpenseCategory(
             "fitness band", "band",
             "earphone", "earphones",
             "headphone", "headphones",
-            "earbuds", "airpods",
+            "earbuds", "airpods", "mac",
             "speaker", "bluetooth speaker",
 
             // 💻 computer & accessories
@@ -401,17 +396,12 @@ enum class ExpenseCategory(
             "memory card", "sd card",
 
             // 🧾 services & repairs
-            "repair", "service",
-            "screen replacement",
-            "battery replacement",
-            "led bulb",
-            "bulb",
-            "tube light",
-            "led tube",
-            "stabilizer",
-            "power strip",
+            "repair", "service", "screen replacement",
+            "battery replacement", "led bulb",
+            "bulb", "tube light", "led tube",
+            "stabilizer", "power strip",
             "electric board",
-            "led light" , "apple", "samsung", "realme",
+            "led light" ,"apple", "samsung", "realme",
             "redmi", "xiaomi", "oneplus", "techno" , "Xiaomi" ,
             "asus" , "macbook",  "samsung",
             "boat", "jbl", "sony", "boult" ,
@@ -474,6 +464,12 @@ enum class ExpenseCategory(
             "ticket", "entry ticket",
             "entry fee", "entry charge",
             "pass", "event pass",
+
+            "football", "cricket", "badminton",
+            "volleyball", "basketball",
+            "ipl", "fifa", "world cup",
+            "match", "stadium",
+            "football match", "cricket match",
 
             // 🧾 Generic entertainment words
             "entertainment", "leisure",
@@ -598,7 +594,7 @@ enum class ExpenseCategory(
             "grapes", "papaya", "pineapple", "watermelon",
             "pomegranate", "guava", "strawberry",
             // 🥜 nuts
-            "nut", "nuts",
+            "nut", "nuts", "dairy",
             "peanut", "peanuts", "groundnut", "moongphali",
             "almond", "almonds", "badam",
             "cashew", "cashews", "kaju",
@@ -615,7 +611,7 @@ enum class ExpenseCategory(
             "dry fruit", "dry fruits",
             "mixed nuts",
             "roasted nuts",
-            "salted nuts", "raisin", "kishmis", "Dates",
+            "salted nuts", "raisin", "kishmis", "Dates", "sweets",
 
             // 🥛 dairy
             "milk", "curd", "yogurt", "buttermilk", "paneer",
@@ -821,8 +817,11 @@ enum class ExpenseCategory(
             "capsule", "appointment", "bandage", "pain killer",
             "antibiotic", "medical prescription" , "apollo pharmacy", "medplus", "netmeds",
             "pharmeasy", "1mg", "tata 1mg", "sonography", "diagnostic",
-            "dolo", "crocin", "paracetamol",
-            "vicks", "strepsils", "digene" , "condom"
+            "dolo", "crocin", "paracetamol", "operation" , "operations",
+            "vicks", "strepsils", "digene" , "condom",
+            "gym", "workout", "fitness",
+            "protein", "whey protein",
+            "dumbbell", "yoga mat"
         )
     ),
 

@@ -2,7 +2,6 @@ package com.example.xpenso.InsightsModel
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,14 +12,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.xpenso.InsightMonthComponents.OtherCategoryDialog
 import com.example.xpenso.AppStart.AnalyticsHelper
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.ExpenseViewModel
 import com.example.xpenso.InsightMonthComponents.CategoryDonutChart
 import com.example.xpenso.InsightMonthComponents.CategoryLegend
 import com.example.xpenso.InsightMonthComponents.InsightSummaryCard
@@ -28,7 +27,6 @@ import com.example.xpenso.InsightMonthComponents.OtherCategoryItem
 import com.example.xpenso.InsightMonthComponents.SimpleBarChart
 import com.example.xpenso.InsightMonthComponents.SmartInsightAnimatedText
 import com.example.xpenso.InsightMonthComponents.generateSmartInsight
-import com.example.xpenso.InsightMonthComponents.toDisplayUpper
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.Transaction.ExpenseCategory
 import com.example.xpenso.ui.theme.LocalBudgetColors
@@ -116,7 +114,7 @@ fun MonthViewContent(
     }
 
     val smartInsight = remember(allExpenses, selectedTrend, startOfMonth) {
-        if (selectedTrend == null) ""
+        if (selectedTrend == null) AnnotatedString("")
         else generateSmartInsight(
             currencySymbol = currencySymbol,
             allExpenses = allExpenses,
@@ -335,8 +333,8 @@ fun MonthViewContent(
 
             Surface(
                 modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .clickable { showBreakdown = !showBreakdown },
+                    .clip(RoundedCornerShape(24.dp)),
+//                    .clickable { showBreakdown = !showBreakdown },
 
                 shape = RoundedCornerShape(24.dp),
                 color = colorScheme.surface,
@@ -355,11 +353,11 @@ fun MonthViewContent(
 
             // Legend — no extra card, let items breathe
 
-            if (showBreakdown) {
-                CategoryLegend(
-                    data = pieChartData,
-                    currencySymbol = currencySymbol,
-                    onCategoryClick = { categoryName ->
+//            if (showBreakdown) {
+            CategoryLegend(
+                data = pieChartData,
+                currencySymbol = currencySymbol,
+                onCategoryClick = { categoryName ->
 
 //                    if (!isPremium) {
 //                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -367,62 +365,62 @@ fun MonthViewContent(
 //                        return@CategoryLegend
 //                    }
 
-                        if (categoryName == "OTHER" && mergedCategories.isNotEmpty()) {
+                    if (categoryName == "OTHER" && mergedCategories.isNotEmpty()) {
 
-                            val dialogItems = buildList {
+                        val dialogItems = buildList {
 
-                                if (hasRealOther) {
+                            if (hasRealOther) {
 
-                                    val otherAmount = selectedMonthExpenses
-                                        .filter {
-                                            (ExpenseCategory.entries
-                                                .find { cat -> cat.name == it.category }
-                                                ?: ExpenseCategory.OTHER
-                                                    ) == ExpenseCategory.OTHER
-                                        }
-                                        .sumOf { it.amount }
+                                val otherAmount = selectedMonthExpenses
+                                    .filter {
+                                        (ExpenseCategory.entries
+                                            .find { cat -> cat.name == it.category }
+                                            ?: ExpenseCategory.OTHER
+                                                ) == ExpenseCategory.OTHER
+                                    }
+                                    .sumOf { it.amount }
 
-                                    add(
-                                        OtherCategoryItem(
-                                            name = "OTHER",
-                                            amount = otherAmount,
-                                            color = ExpenseCategory.OTHER.color
-                                        )
+                                add(
+                                    OtherCategoryItem(
+                                        name = ExpenseCategory.OTHER,
+                                        amount = otherAmount,
+                                        color = ExpenseCategory.OTHER.color
                                     )
-                                }
-
-                                mergedCategories.forEach { category ->
-
-                                    val amount = selectedMonthExpenses
-                                        .filter {
-                                            (ExpenseCategory.entries
-                                                .find { cat -> cat.name == it.category }
-                                                ?: ExpenseCategory.OTHER
-                                                    ) == category
-                                        }
-                                        .sumOf { it.amount }
-
-                                    add(
-                                        OtherCategoryItem(
-                                            name = category.name.toDisplayUpper(),
-                                            amount = amount,
-                                            color = category.color
-                                        )
-                                    )
-                                }
+                                )
                             }
 
-                            otherDialogCategories = dialogItems
-                            showOtherDialog = true
-                        } else {
-                            currentMonthRange?.let { (start, end) ->
-                                onCategoryClick(categoryName, start, end)
+                            mergedCategories.forEach { category ->
+
+                                val amount = selectedMonthExpenses
+                                    .filter {
+                                        (ExpenseCategory.entries
+                                            .find { cat -> cat.name == it.category }
+                                            ?: ExpenseCategory.OTHER
+                                                ) == category
+                                    }
+                                    .sumOf { it.amount }
+
+                                add(
+                                    OtherCategoryItem(
+                                        name = category,
+                                        amount = amount,
+                                        color = category.color
+                                    )
+                                )
                             }
                         }
+
+                        otherDialogCategories = dialogItems
+                        showOtherDialog = true
+                    } else {
+                        currentMonthRange?.let { (start, end) ->
+                            onCategoryClick(categoryName, start, end)
+                        }
                     }
-                )
-                Spacer(Modifier.height(40.dp))
-            }
+                }
+            )
+            Spacer(Modifier.height(40.dp))
+//        }
         }
 
 

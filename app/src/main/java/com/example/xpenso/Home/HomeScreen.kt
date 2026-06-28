@@ -1,13 +1,10 @@
 package com.example.xpenso.Home
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.navigation.NavController
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,7 +18,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 
 import com.example.xpenso.AppStart.AnalyticsHelper
 import com.example.xpenso.Database.ExpenseEntity
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.BudgetViewModel
+import com.example.xpenso.Viewmodel.ExpenseViewModel
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.utils.PremiumDatePickerDialog
 
@@ -33,6 +31,7 @@ fun HomeScreen(
     settingsStore: SettingsStore,
     expenseViewModel: ExpenseViewModel = viewModel(),
     onAddExpense: () -> Unit,
+    budgetViewModel: BudgetViewModel,
     onEditExpense: (ExpenseEntity) -> Unit,
     onDeleteExpense: (ExpenseEntity) -> Unit
 ) {
@@ -123,22 +122,36 @@ fun HomeScreen(
     val currentMonthSpent by expenseViewModel.currentMonthSpent.collectAsState()
 
     // --- FIX: Get the budget for the EFFECTIVE cycle month ---
-    val budget = remember(selectedDateMillis, startOfMonthSetting, allExpenses) {
+    var budget by remember(selectedDateMillis, startOfMonthSetting) {
+        mutableDoubleStateOf(0.0)
+    }
 
-        val cal = Calendar.getInstance().apply { timeInMillis = selectedDateMillis }
+    LaunchedEffect(selectedDateMillis, startOfMonthSetting) {
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = selectedDateMillis
+        }
+
         val startCal = Calendar.getInstance().apply {
-            set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), startOfMonthSetting, 0, 0, 0)
+            set(
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                startOfMonthSetting,
+                0,
+                0,
+                0
+            )
             set(Calendar.MILLISECOND, 0)
         }
 
         if (cal.before(startCal)) {
             startCal.add(Calendar.MONTH, -1)
         }
-        settingsStore.getMonthlyBudget(
+
+        budget = budgetViewModel.getBudget(
             month = startCal.get(Calendar.MONTH),
             year = startCal.get(Calendar.YEAR)
         )
-    }.collectAsState(initial = 0.0).value
+    }
 
     // 🔥 FIXED: Removed the incorrect currencySymbol parameter
     val insightResult = getDailyBudgetInsight(

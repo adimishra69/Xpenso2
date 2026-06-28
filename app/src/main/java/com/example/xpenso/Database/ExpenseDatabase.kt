@@ -8,15 +8,18 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.xpenso.BudgetDatabase.BudgetDao
+import com.example.xpenso.BudgetDatabase.BudgetEntity
 
 @Database(
-    entities = [ExpenseEntity::class],
+    entities = [ExpenseEntity::class ,  BudgetEntity::class],
     version = 1,
     exportSchema = false
 )
 abstract class ExpenseDatabase : RoomDatabase() {
 
     abstract fun expenseDao(): ExpenseDao
+    abstract fun budgetDao(): BudgetDao
 
     companion object {
 

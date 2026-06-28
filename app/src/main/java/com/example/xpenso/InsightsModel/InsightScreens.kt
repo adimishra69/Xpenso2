@@ -19,8 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.xpenso.AppStart.AnalyticsHelper
+import com.example.xpenso.Viewmodel.BudgetViewModel
 import com.example.xpenso.PremiumHandler.PremiumFeatureSheet
-import com.example.xpenso.ExpenseViewmodel.ExpenseViewModel
+import com.example.xpenso.Viewmodel.ExpenseViewModel
 import com.example.xpenso.InsightYearView.YearView
 import com.example.xpenso.SettingsStore
 import com.example.xpenso.utils.AppTopBar
@@ -39,9 +40,11 @@ fun InsightsScreen(
     currencySymbol: String,
     expenseViewModel: ExpenseViewModel,
     settingsStore: SettingsStore,
+    budgetViewModel: BudgetViewModel,
     onCategoryClick: (String, Long, Long) -> Unit,
-    onNavigateToPremium: () -> Unit
-) {
+    DirectPremium: () -> Unit,
+
+    ) {
     val currentStartDay by settingsStore.startOfMonth.collectAsState(initial = 1)
     val isPremium by settingsStore.isPremium.collectAsState(initial = false)
 
@@ -179,7 +182,8 @@ fun InsightsScreen(
                 YearView(
                     currencySymbol = currencySymbol,
                     expenseViewModel = expenseViewModel,
-                    settingsStore = settingsStore
+                    settingsStore = settingsStore,
+                    budgetViewModel = budgetViewModel
                 )
             }
         }
@@ -192,7 +196,7 @@ fun InsightsScreen(
             onDismiss = { showPremiumSheet = false },
             onUpgradeClick = {
                 showPremiumSheet = false
-                onNavigateToPremium()
+                DirectPremium()
             }
         )
     }

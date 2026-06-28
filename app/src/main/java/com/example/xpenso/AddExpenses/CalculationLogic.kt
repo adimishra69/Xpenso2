@@ -65,19 +65,25 @@ fun displaySegment(expr: String): String {
         return expr
     }
 
+    fun String.toDisplaySymbols(): String =
+        this.replace("*", "×")
+            .replace("/", "÷")
+
     val last = expr.last()
 
     val lastOpIndex = expr.indexOfLast { it in OPERATORS }
 
     // No operator yet
-    if (lastOpIndex == -1) return expr
+    if (lastOpIndex == -1) return expr.toDisplaySymbols()
 
     // Last number after operator
     val lastNumber = expr.substring(lastOpIndex + 1)
 
     // Previous number before operator
     val previousPart = expr.substring(0, lastOpIndex)
-    val previousOpIndex = previousPart.indexOfLast { it in OPERATORS }
+    val previousOpIndex = previousPart.indexOfLast {
+        it in OPERATORS
+    } .takeIf { it > 0 } ?: -1
 
     val previousNumber =
         if (previousOpIndex == -1)
@@ -86,9 +92,9 @@ fun displaySegment(expr: String): String {
             previousPart.substring(previousOpIndex + 1)
 
     return if (last in OPERATORS) {
-        previousNumber + last
+        (previousNumber + last).toDisplaySymbols()
     } else {
-        lastNumber
+        lastNumber.toDisplaySymbols()
     }
 }
 

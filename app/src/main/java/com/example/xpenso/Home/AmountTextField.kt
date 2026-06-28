@@ -179,15 +179,26 @@ fun AmountTextField(
 
     // ── Shake animation ───────────────────────────────────────────────────────
     LaunchedEffect(shakeTrigger) {
-        if (isFirstLoad) { isFirstLoad = false; return@LaunchedEffect }
+        if (isFirstLoad) {
+            isFirstLoad = false
+            return@LaunchedEffect
+        }
 
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
 
-        repeat(3) {
-            shakeOffset.animateTo(-7f, tween(40))
-            shakeOffset.animateTo(7f,  tween(40))
+        repeat(2) {   // only 2 gentle shakes
+            shakeOffset.animateTo(-3f, tween(90))  // move left slowly
+            shakeOffset.animateTo(3f, tween(90))   // move right slowly
         }
-        shakeOffset.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+
+        // Smooth return to center
+        shakeOffset.animateTo(
+            0f,
+            spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessLow
+            )
+        )
     }
 
     // ── Border pulse on error ─────────────────────────────────────────────────
@@ -300,10 +311,23 @@ fun AmountTextField(
                     onValueChange = { newValue ->
                         isDirty = true
 
+                        val regex = Regex("^\\d*\\.?\\d*$")
+
+                        // Reject commas, letters, spaces, and any other characters
+                        if (!regex.matches(newValue)) {
+//                            scope.launch { shakeTrigger++ }
+                            return@BasicTextField
+                        }
+
                         val cleaned     = newValue.trim()
                         val integerPart = cleaned.substringBefore(".", cleaned).trimStart('-', ' ')
                         val decimalPart = if (cleaned.contains(".")) cleaned.substringAfter(".") else ""
 
+
+                        if (cleaned.count { it == '.' } > 1) {
+                            scope.launch { shakeTrigger++ }
+                            return@BasicTextField
+                        }
                         // Block if integer part exceeds limit
                         if (integerPart.length > MAX_INTEGER_DIGITS) {
                             scope.launch { shakeTrigger++ }

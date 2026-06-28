@@ -52,7 +52,7 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
             )
         ) {
-            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Column(modifier = Modifier.padding(vertical = 0.dp)) {
                 content()
             }
         }
@@ -68,6 +68,7 @@ fun SettingsItem(
     showArrow: Boolean = true,
     onClick: () -> Unit = {}
 ) {
+
     ListItem(
         modifier = if (showArrow) Modifier.clickable { onClick() } else Modifier,
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),

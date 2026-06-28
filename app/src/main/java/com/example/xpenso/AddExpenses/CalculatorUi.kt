@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -87,18 +91,34 @@ private fun CalcButton(
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val haptic = LocalHapticFeedback.current
+
     var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.92f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "scale"
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioMediumBouncy
+        ),
+        label = "calcButtonScale"
     )
 
-    val containerColor = when (key.type) {
+
+
+    val baseColor = when (key.type) {
         KeyType.NUMBER   -> MaterialTheme.colorScheme.surfaceVariant
         KeyType.OPERATOR -> MaterialTheme.colorScheme.primaryContainer
-        KeyType.EQUALS   -> MaterialTheme.colorScheme.primary.copy(.9f)
+        KeyType.EQUALS   -> MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
     }
+
+    // Slightly darken while pressed
+    val containerColor = if (isPressed) {
+        baseColor.copy(alpha = 0.85f)
+    } else {
+        baseColor
+    }
+
     val contentColor = when (key.type) {
         KeyType.NUMBER   -> MaterialTheme.colorScheme.onSurface
         KeyType.OPERATOR -> MaterialTheme.colorScheme.onPrimaryContainer
@@ -114,11 +134,17 @@ private fun CalcButton(
             .clip(RoundedCornerShape(16.dp))
             .clickable(
                 interactionSource = interactionSource,
-                indication = null
-            ) { onClick() },
+                indication = ripple(),
+             onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.KeyboardTap)
+                    onClick()
+                }
+            )
+            ,
         shape = RoundedCornerShape(16.dp),
         color = containerColor,
-        contentColor = contentColor
+        contentColor = contentColor,
+        tonalElevation = if (isPressed) 1.dp else 3.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(

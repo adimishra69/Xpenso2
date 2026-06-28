@@ -256,9 +256,18 @@ object PdfReportGenerator {
             yPos += catBlockH + 22f
 
             // ── TRANSACTIONS TABLE ───────────────────────────────────────────
+            // Start transactions on the current page only if there is enough space.
+// Otherwise, move the entire section to a new page.
+
+            val minimumTransactionSpace = 130f   // title + header + ~3 rows
+
+            if (yPos + minimumTransactionSpace > PAGE_H - 60f) {
+                newPage()
+                yPos = MARGIN
+            }
+
             yPos = sectionTitle(canvas, "ALL TRANSACTIONS  (${expenses.size} records)", yPos)
             yPos += 4f
-
             yPos = drawTableHeader(canvas, yPos)
 
             val tableDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())

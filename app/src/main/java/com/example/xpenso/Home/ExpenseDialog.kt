@@ -115,9 +115,6 @@ fun ExpenseDialog(
                 }
 
         itemText = name
-//        if (!isCategoryManuallyChanged && name.isNotBlank()) {
-//            selectedCategory = ExpenseCategory.detect(name)
-//        }
     }
 
 
@@ -414,24 +411,77 @@ fun ExpenseDialog(
         ) {
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 val screenHeight = maxHeight
-                val isCompact = screenHeight < 700.dp
-                val isMedium = screenHeight < 800.dp
 
-                val amountVertPad = if (isCompact) 2.dp else 4.dp
-                val itemVertPad = if (isCompact) 2.dp else 4.dp
-                val notesVertPad = if (isCompact) 2.dp else 6.dp
-                val calcVertPad = if (isCompact) 2.dp else 6.dp
-                val calcRowSpacing = if (isCompact) 5.dp else 7.dp
-                val calcButtonHeight = if (isCompact) 48.dp else 56.dp
-                val saveBtnHeight = if (isCompact) 48.dp else 54.dp
-                val bottomSpacing = if (isCompact) 4.dp else 8.dp
-                val dividerVertPad = if (isCompact) 2.dp else 4.dp
+                val isCompact = screenHeight < 650.dp
+                val isMedium = screenHeight < 800.dp
+                val isExpanded = screenHeight >= 800.dp
+
+                val amountVertPad = when {
+                    isCompact -> 2.dp
+                    isMedium -> 3.dp
+                    else -> 4.dp
+                }
+
+                val itemVertPad = when {
+                    isCompact -> 2.dp
+                    isMedium -> 4.dp
+                    else -> 8.dp
+                }
+
+                val notesVertPad = when {
+                    isCompact -> 2.dp
+                    isMedium -> 6.dp
+                    else -> 10.dp
+                }
+
+                val calcVertPad = when {
+                    isCompact -> 2.dp
+                    isMedium -> 6.dp
+                    else -> 10.dp
+                }
+
+                val calcRowSpacing = when {
+                    isCompact -> 5.dp
+                    isMedium -> 7.dp
+                    else -> 10.dp
+                }
+
+                val calcButtonHeight = when {
+                    isCompact -> 48.dp
+                    isMedium -> 56.dp
+                    else -> 64.dp
+                }
+
+                val saveBtnHeight = when {
+                    isCompact -> 48.dp
+                    isMedium -> 54.dp
+                    else -> 60.dp
+                }
+
+                val bottomSpacing = when {
+                    isCompact -> 4.dp
+                    isMedium -> 8.dp
+                    else -> 16.dp
+                }
+
+                val dividerVertPad = when {
+                    isCompact -> 2.dp
+                    isMedium -> 4.dp
+                    else -> 6.dp
+                }
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .navigationBarsPadding()
+                    ,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = 600.dp)
+                            .fillMaxWidth()
+                    ) {
 
                     // ── AMOUNT DISPLAY ────────────────────────────────────────
                     AmountSection(
@@ -530,13 +580,19 @@ fun ExpenseDialog(
 //                                    }
 
                                     if (!isCategoryManuallyChanged) {
-                                        val detected =
-                                            if (it.isBlank()) null else ExpenseCategory.detect(it)
 
-                                        if (detected != null && detected != selectedCategory) {
-                                            selectedCategory = detected
-                                            if (detected != ExpenseCategory.OTHER) {
-                                                isAutoSuggested = true
+                                        if (it.isBlank()) {
+                                            selectedCategory = null
+                                        } else {
+
+                                            val detected = ExpenseCategory.detect(it)
+
+                                            if (detected != selectedCategory) {
+                                                selectedCategory = detected
+
+                                                if (detected != ExpenseCategory.OTHER) {
+                                                    isAutoSuggested = true
+                                                }
                                             }
                                         }
                                     }
@@ -581,7 +637,11 @@ fun ExpenseDialog(
                         verticalPadding = calcVertPad,    // ← ADD
                         rowSpacing = calcRowSpacing,      // ← ADD
                         buttonHeight = calcButtonHeight,  // ← ADD
-                        modifier = Modifier.weight(1f)
+                        modifier = if (isExpanded) {
+                            Modifier.height(320.dp)
+                        } else {
+                            Modifier.weight(1f)
+                        }
                     )
                     Spacer(Modifier.height(bottomSpacing))
 
@@ -689,6 +749,7 @@ fun ExpenseDialog(
 
                     Spacer(Modifier.height(bottomSpacing))
 
+                    }
                 }
             }
         }

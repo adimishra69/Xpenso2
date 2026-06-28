@@ -35,7 +35,7 @@ fun ColorStyleSetting(
         modifier = Modifier.fillMaxWidth()
     ) {
 
-        listOf("App", "System").forEachIndexed { index, label ->
+        listOf("Classic", "Modern").forEachIndexed { index, label ->
 
             SegmentedButton(
                 selected = colorStyle == index,
@@ -46,8 +46,8 @@ fun ColorStyleSetting(
                 },
                 shape = SegmentedButtonDefaults.itemShape(index, 2),
                 colors = SegmentedButtonDefaults.colors(
-                    activeContainerColor = MaterialTheme.colorScheme.primary,
-                    activeContentColor = MaterialTheme.colorScheme.onPrimary
+                    activeContainerColor = MaterialTheme.colorScheme.primary.copy(0.8f),
+                    activeContentColor = MaterialTheme.colorScheme.onPrimary.copy(.9f)
                 )
             ) {
                 Text(

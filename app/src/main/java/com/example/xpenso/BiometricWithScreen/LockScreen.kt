@@ -281,9 +281,11 @@ fun LockScreen(
                         // but style it to look premium.
                         OutlinedTextField(
                             value = inputPin,
+
                             onValueChange = { newPin ->
+                                val digitsOnly = newPin.filter { it.isDigit() }
                                 handlePinInput(
-                                    newPin = newPin,
+                                    newPin = digitsOnly,
                                     savedPin = savedPin,
                                     onUpdatePin = { inputPin = it },
                                     onErrorChange = { isError = it },

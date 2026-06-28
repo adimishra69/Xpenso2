@@ -11,7 +11,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -109,13 +113,31 @@ fun NoExpensesToday(
             )
         }
 
+
+        val interactionSource = remember { MutableInteractionSource() }
+        val isPressed by interactionSource.collectIsPressedAsState()
+
+        val buttonScale = remember { Animatable(1f) }
+
+        LaunchedEffect(isPressed) {
+            buttonScale.animateTo(
+                targetValue = if (isPressed) 0.97f else 1f,
+                animationSpec = tween(
+                    durationMillis = if (isPressed) 90 else 160
+                )
+            )
+        }
+
         OutlinedButton(
             onClick = onAddExpenseClick,
-            modifier = Modifier.graphicsLayer {
-                this.alpha = buttonAlpha.value
-            }
+            interactionSource = interactionSource,
+            modifier = Modifier
+                .graphicsLayer {
+                    this.alpha = buttonAlpha.value
+                }
+                .scale(buttonScale.value)
         ) {
-            Icon(Icons.Default.Add, null)
+            Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(6.dp))
             Text("Add Expense")
         }

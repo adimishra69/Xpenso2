@@ -1,5 +1,6 @@
 package com.example.xpenso.AddExpenses
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -38,7 +39,7 @@ import androidx.compose.ui.unit.sp
 // Long-press → clear all | Single tap → delete last character
 // ─────────────────────────────────────────────────────────────────────────────
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 
 fun BackspaceButton(
